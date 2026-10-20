@@ -62,6 +62,7 @@ public final class IlluniumCustomPlugin extends JavaPlugin {
         };
 
         List<String> enabled = new ArrayList<>();
+        AdminCommand admin = new AdminCommand(getPluginMeta().getVersion(), database.schemaVersion(), enabled);
         for (FeatureModule module : modules) {
             if (!config.moduleEnabled(module.id())) {
                 getLogger().info("Module " + module.id() + " disabled by config");
@@ -73,14 +74,14 @@ public final class IlluniumCustomPlugin extends JavaPlugin {
                     Objects.requireNonNullElseGet(yaml.getConfigurationSection(module.id()), () -> yaml.createSection(module.id())),
                     database,
                     identities,
+                    admin,
                     mainThread
             ));
             enabled.add(module.id());
             getLogger().info("Module " + module.id() + " enabled");
         }
 
-        registerCommand("illuniumcustom", "IlluniumCustom diagnostics", List.of("ic"),
-                new AdminCommand(getPluginMeta().getVersion(), database.schemaVersion(), enabled));
+        registerCommand("illuniumcustom", "IlluniumCustom diagnostics", List.of("ic"), admin);
         getLogger().info("IlluniumCustom " + getPluginMeta().getVersion() + " enabled (schema v"
                 + database.schemaVersion() + ", modules: " + enabled + ")");
     }

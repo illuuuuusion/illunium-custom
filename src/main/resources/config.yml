@@ -3,6 +3,7 @@
 # Feature modules (true/false). A module missing here is enabled.
 modules:
   recipes: true
+  groups: true
 
 storage:
   # SQLite file inside the plugin folder.

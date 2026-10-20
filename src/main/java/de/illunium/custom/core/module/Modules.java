@@ -1,5 +1,6 @@
 package de.illunium.custom.core.module;
 
+import de.illunium.custom.groups.GroupsModule;
 import de.illunium.custom.recipes.RecipesModule;
 import java.util.List;
 
@@ -11,7 +12,8 @@ public final class Modules {
 
     public static List<FeatureModule> create() {
         return List.of(
-                new RecipesModule()
+                new RecipesModule(),
+                new GroupsModule()
         );
     }
 }

@@ -1,7 +1,7 @@
 # IlluniumCustom — Implementation Plan v1.0
 
 > **Stand:** 20.10.2026  
-> **Status:** Phase 0–2 umgesetzt (siehe [`docs/development.md`](./docs/development.md#verifikation-phase-02-20102026-paper-263-build-207-temurin-25041)); ab Phase 3 offen  
+> **Status:** Phase 0–3 umgesetzt (siehe [`docs/development.md`](./docs/development.md)); ab Phase 4 offen  
 > **Repository:** https://github.com/illuuuuusion/illunium-custom  
 > **Produktvertrag:** [`MVP.md`](./MVP.md) — bei Abweichungen ist dieser MVP für das Spielverhalten maßgeblich.  
 > **Zielruntime:** Minecraft/Paper **26.3**, Java **25**; gepinnt: Paper-Build **207** (STABLE), `paper-api 26.3.build.207-stable`.
@@ -337,13 +337,13 @@ Die Phasen sind in dieser Reihenfolge empfohlen. **Jede Phase hat einen klaren, 
 
 **Exit-Gate:**
 
-- [ ] **Jeder** Eintrag aus der Rollen-Matrix mindestens einmal positiv und negativ getestet.
-- [ ] Einzigartigkeit: `NOVA` und `nova` nicht gleichzeitig als Name/Tag, max. 16/5 Zeichen, keine Leer-/Formatzeichen.
-- [ ] Eine UUID nie in zwei Gruppen, exakt ein Leader, beliebig viele Mods.
-- [ ] Offline-Kick/Promotion/Demotion und Anzeige nach späterem Rejoin korrekt.
-- [ ] Gleichzeitige Beitrittsversuche/Transfer/Disband hinterlassen keine halben Änderungen.
-- [ ] Einladung 299 s noch gültig, ab 300 s abgelaufen; Restart verwirft pending Invites.
-- [ ] Recovery-Commands nur mit `illuniumcustom.admin`, dokumentiert/logged.
+- [x] **Jeder** Eintrag aus der Rollen-Matrix mindestens einmal positiv und negativ getestet.
+- [x] Einzigartigkeit: `NOVA` und `nova` nicht gleichzeitig als Name/Tag, max. 16/5 Zeichen, keine Leer-/Formatzeichen.
+- [x] Eine UUID nie in zwei Gruppen, exakt ein Leader, beliebig viele Mods.
+- [x] Offline-Kick/Promotion/Demotion und Anzeige nach späterem Rejoin korrekt. *(Service-Ebene; Nametag-Anzeige mit Phase 4, Client-E2E Phase 8.)*
+- [x] Gleichzeitige Beitrittsversuche/Transfer/Disband hinterlassen keine halben Änderungen.
+- [x] Einladung 299 s noch gültig, ab 300 s abgelaufen; Restart verwirft pending Invites.
+- [x] Recovery-Commands nur mit `illuniumcustom.admin`, dokumentiert/logged.
 
 **Review-/Commit-Schnitt:** `feat: implement group domain and role management`.
 
