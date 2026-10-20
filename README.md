@@ -77,6 +77,17 @@ Höchstens eine Ehe pro UUID, keine Selbstheirat; Ehen überstehen Quit, Namensw
 
 Gezählt wird ab der ersten Aktivierung des Plugins, sekundengenau, Ausgabe als `1d 2h 3m`; die laufende Session ist sofort enthalten. Gespeichert wird beim Quit, alle 60 Sekunden und beim geordneten Shutdown. Bei einem Absturz fehlt höchstens die Zeit seit dem letzten Checkpoint (≤ 60 s pro Spieler); doppelt gezählt wird nichts. Kein Leaderboard, keine AFK-Erkennung.
 
+### Whitelist Guard (`whitelistguard`)
+
+Die **native** Minecraft-Whitelist bleibt die einzige Zugangsliste; es gibt keine zweite Liste und keine eigenen Access-Commands. Spieler werden mit Vanilla verwaltet: `/whitelist add|remove|list|reload` (funktioniert auch für Accounts, die noch nie gejoint sind, solange Mojang erreichbar ist).
+
+- Beim Start und alle `check-interval-seconds` (Standard 30): `white-list` und `enforce-whitelist` werden eingeschaltet, falls aus (Warnung im Log, Wert landet in `server.properties`).
+- `staff`: geschützte Server-Staff-Accounts (**nicht** Gruppen-Mods) als `{uuid, name}`. Jeder Eintrag wird pro Start einmal bei Mojang geprüft (UUID muss existieren und aktuell diesen Namen tragen). Nur geprüfte Einträge werden nach einem versehentlichen `/whitelist remove` wieder eingetragen. Fehlerhafte oder nicht auflösbare Einträge werden nie freigeschaltet und als `ERROR` geloggt. Offline-Mode-UUIDs (Version 3) werden abgelehnt.
+- Das Plugin entfernt oder ändert **keine** anderen Whitelist-Einträge und vergibt keine Rechte. Ein Operator/die Konsole kann die Whitelist weiterhin bewusst ändern; der Guard repariert Fehlkonfiguration, schützt aber nicht vor böswilligen Admins.
+- `online-mode=false` wird bei jedem Start als `ERROR` gemeldet.
+
+Betriebsbasis in `server.properties`: `online-mode=true`, `white-list=true`, `enforce-whitelist=true`. **Launch:** `/whitelist add` berechtigt sofort. Namen vor dem Launch nur eintragen, solange der Server öffentlich nicht erreichbar ist.
+
 ### Anzeige (Nametag/Tablist)
 
 - Über dem Kopf: `[TAG] Name` (Tag in Gruppenfarbe), Tablist: `[TAG] Name ❤`.
@@ -93,10 +104,15 @@ modules:             # <modul>: true|false, fehlende Module sind aktiv
   groups: true
   marriage: true
   playtime: true
+  whitelistguard: true
 storage:
   filename: data.db  # SQLite-Datei im Pluginordner
 marriage:
   offline-symbol: "💔"  # Tablist-Zeichen bei offline Partner; falls der Vanilla-Font es nicht darstellt z. B. "✕❤"
+whitelistguard:
+  check-interval-seconds: 30   # 5..3600
+  staff:                       # geschützte Staff-Accounts: Mojang-UUID + aktueller Name
+    - {uuid: "069a79f4-44e9-4726-a5be-fca90e38aaf5", name: "Notch"}
 ```
 
 Ungültige Werte oder unbekannte Module verhindern den Start mit einer präzisen Fehlermeldung im Log.

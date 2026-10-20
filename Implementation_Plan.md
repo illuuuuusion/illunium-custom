@@ -1,7 +1,7 @@
 # IlluniumCustom — Implementation Plan v1.0
 
 > **Stand:** 20.10.2026  
-> **Status:** Phase 0–5 umgesetzt (siehe [`docs/development.md`](./docs/development.md)); ab Phase 6 offen  
+> **Status:** Phase 0–6 umgesetzt (siehe [`docs/development.md`](./docs/development.md)); ab Phase 7 offen  
 > **Repository:** https://github.com/illuuuuusion/illunium-custom  
 > **Produktvertrag:** [`MVP.md`](./MVP.md) — bei Abweichungen ist dieser MVP für das Spielverhalten maßgeblich.  
 > **Zielruntime:** Minecraft/Paper **26.3**, Java **25**; gepinnt: Paper-Build **207** (STABLE), `paper-api 26.3.build.207-stable`.
@@ -409,12 +409,12 @@ Die Phasen sind in dieser Reihenfolge empfohlen. **Jede Phase hat einen klaren, 
 
 **Exit-Gate:**
 
-- [ ] `/whitelist add <nie zuvor gejoint>` → danach erfolgreicher Login; ohne Whitelist → Ablehnung.
-- [ ] Kein neues SQLite-Access-Schema, kein `access`-Command; native `whitelist.json` bleibt maßgeblich.
-- [ ] Staff-UUIDs sind trotz versehentlichem `/whitelist remove` nach Konsistenzzyklus wieder native whitelisted.
-- [ ] `white-list` und Enforcement werden beim Start und zyklisch geprüft.
-- [ ] Kein Gruppen-Mod kann sich damit Staff-Rechte geben.
-- [ ] Kein Produktions-Port, Firewall-Rule oder Public-Ingress wird für diesen Test verändert.
+- [ ] `/whitelist add <nie zuvor gejoint>` → danach erfolgreicher Login; ohne Whitelist → Ablehnung. *(Eintrag ohne Join nativ erzeugt; Login/Ablehnung im Client-E2E Phase 8.)*
+- [x] Kein neues SQLite-Access-Schema, kein `access`-Command; native `whitelist.json` bleibt maßgeblich.
+- [x] Staff-UUIDs sind trotz versehentlichem `/whitelist remove` nach Konsistenzzyklus wieder native whitelisted.
+- [x] `white-list` und Enforcement werden beim Start und zyklisch geprüft.
+- [x] Kein Gruppen-Mod kann sich damit Staff-Rechte geben. *(Staff nur über `config.yml`; der Guard vergibt keine Rechte.)*
+- [x] Kein Produktions-Port, Firewall-Rule oder Public-Ingress wird für diesen Test verändert.
 
 **Review-/Commit-Schnitt:** `feat: guard native whitelist and protected staff`.
 

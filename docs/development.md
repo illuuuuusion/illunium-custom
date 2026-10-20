@@ -70,3 +70,11 @@ java -jar paper.jar --nogui
 - Gespeichert werden Deltas (`total_seconds = total_seconds + Δ`); der Abschnitt wird auf dem Main Thread abgegrenzt, bevor der Schreibauftrag in die geordnete DB-Queue geht. `/playtime` liest asynchron und addiert die zum Aufrufzeitpunkt noch ungespeicherten Sekunden; da alle vorherigen Checkpoints vor dem Lesen in der Queue stehen, fehlt oder doppelt sich nichts.
 - Testserver: gespeicherte Zeit offline abrufbar (`/playtime steve` → `1d 2h 3m`, case-insensitiv), unbekannter Name und Konsole ohne Argument mit klarer Meldung; Enable/Disable ohne Plugin-Fehler.
 - **Offen für Client-E2E (Phase 8):** laufende Session mit echtem Spieler über Checkpoint, Quit und Neustart.
+
+## Verifikation Phase 6 (21.10.2026, Paper 26.3 Build 207)
+
+- `WhitelistGuardTest`: Staff-Parser lehnt fehlende/undashed UUIDs, Offline-UUIDs (v3), ungültige/zu lange Namen und doppelte UUIDs ab; Guard schaltet Whitelist und Enforcement wieder ein (ohne Log-Spam bei korrektem Zustand), fügt nur verifizierte Staff wieder ein, entfernt nie fremde Einträge; nicht auflösbare UUID, falscher Name und abweichende UUID werden nie eingetragen.
+- Paper 26.3 füllt bei `createProfile(uuid).update()` den Namen **nicht** aus (nur Properties). Geprüft wird daher gegen `profileId`/`profileName` im von Mojang gelieferten `textures`-Property.
+- Testserver (`online-mode=true`, Start mit `white-list=false`, `enforce-whitelist=false`): beide Flags beim Start eingeschaltet und in `server.properties` persistiert; Staff `Notch` verifiziert und eingetragen, `jeb_`-UUID mit Name `NotJeb` abgelehnt (`ERROR`, nicht eingetragen); `/whitelist remove Notch` + `/whitelist off` → nach ≤ 30 s Whitelist wieder an und Notch wieder drin; `/whitelist add jeb_` (nie gejoint) erzeugt den nativen Eintrag mit Name. Vom Guard eingetragene Staff stehen mit leerem Namen in `whitelist.json` (Bukkit-API kennt den Namen nie gejointer Accounts nicht); `/whitelist remove <Name>` funktioniert trotzdem.
+- Vanilla-Semantik: Mit `enforce-whitelist=true` kickt `/whitelist remove` bzw. `/whitelist reload` online befindliche, nicht mehr gelistete Spieler sofort.
+- **Offen für Client-E2E (Phase 8):** Login eines frisch per `/whitelist add` eingetragenen Accounts, Ablehnung eines nicht gelisteten Accounts, Kick beim Entfernen.

@@ -4,6 +4,7 @@ import de.illunium.custom.groups.GroupsModule;
 import de.illunium.custom.marriage.MarriageModule;
 import de.illunium.custom.playtime.PlaytimeModule;
 import de.illunium.custom.recipes.RecipesModule;
+import de.illunium.custom.whitelistguard.WhitelistGuardModule;
 import java.util.List;
 
 /** Explicit module registry, in enable order. A new feature is added here and nowhere else in core. */
@@ -17,7 +18,8 @@ public final class Modules {
                 new RecipesModule(),
                 new GroupsModule(),
                 new MarriageModule(),
-                new PlaytimeModule()
+                new PlaytimeModule(),
+                new WhitelistGuardModule()
         );
     }
 }

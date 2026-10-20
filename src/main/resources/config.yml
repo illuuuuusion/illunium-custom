@@ -6,6 +6,7 @@ modules:
   groups: true
   marriage: true
   playtime: true
+  whitelistguard: true
 
 storage:
   # SQLite file inside the plugin folder.
@@ -14,3 +15,11 @@ storage:
 marriage:
   # Tablist symbol when the partner is offline. If the vanilla font does not render it, use e.g. "✕❤".
   offline-symbol: "💔"
+
+whitelistguard:
+  # Seconds between consistency checks (5..3600): whitelist on, enforcement on, staff present. No network per check.
+  check-interval-seconds: 30
+  # Protected server staff (NOT group mods). Each entry must be the Mojang UUID and current name of the account;
+  # it is verified against Mojang once per start and only then re-added to the native whitelist if missing.
+  # Example: - {uuid: "069a79f4-44e9-4726-a5be-fca90e38aaf5", name: "Notch"}
+  staff: []
