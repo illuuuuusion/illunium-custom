@@ -14,7 +14,16 @@ Eigenständiges Paper-Plugin für die Illunium Forever-World. Produktvertrag: [`
 ./gradlew clean check build --no-daemon
 ```
 
-Ergebnis: `build/libs/IlluniumCustom-<version>.jar`. Details und lokaler Teststart: [`docs/development.md`](./docs/development.md).
+Ergebnis: `build/libs/IlluniumCustom-<version>.jar`.
+
+## Download
+
+Jeder Push auf `main` baut und ersetzt das Release [`latest`](https://github.com/illuuuuusion/illunium-custom/releases/tag/latest) (als Pre-Release markiert):
+
+- JAR: https://github.com/illuuuuusion/illunium-custom/releases/download/latest/IlluniumCustom.jar
+- SHA-256: https://github.com/illuuuuusion/illunium-custom/releases/download/latest/IlluniumCustom.jar.sha256
+
+Das ist ein Entwicklungsbuild, keine Produktionsfreigabe; vor jedem Rollout auf dem Testserver prüfen. Details und lokaler Teststart: [`docs/development.md`](./docs/development.md).
 
 ## Module
 

@@ -30,3 +30,33 @@ jobs:
           name: IlluniumCustom
           path: build/libs/IlluniumCustom-*.jar
           if-no-files-found: error
+
+  # Rolling "latest" release: replaced on every push to main, so the newest JAR is always downloadable.
+  release:
+    needs: build
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    concurrency:
+      group: latest-release
+      cancel-in-progress: true
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+    steps:
+      - name: Download plugin JAR
+        uses: actions/download-artifact@v8
+        with:
+          name: IlluniumCustom
+
+      - name: Publish latest release
+        run: |
+          mv IlluniumCustom-*.jar IlluniumCustom.jar
+          sha256sum IlluniumCustom.jar > IlluniumCustom.jar.sha256
+          gh release delete latest --yes --cleanup-tag || true
+          gh release create latest IlluniumCustom.jar IlluniumCustom.jar.sha256 \
+            --target "$GITHUB_SHA" \
+            --prerelease \
+            --title "Latest build (${GITHUB_SHA::7})" \
+            --notes "Automatic build of $GITHUB_SHA from main. Development build: test on the separate test server before any production rollout."

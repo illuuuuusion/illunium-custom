@@ -7,7 +7,7 @@
 ```
 
 - Gradle Wrapper und Java-25-Toolchain sind festgelegt; `paper-api` ist exakt auf `26.3.build.207-stable` gepinnt (`compileOnly`).
-- CI (`.github/workflows/build.yml`) führt denselben Befehl aus und stellt die JAR als Artefakt bereit. Es gibt **keinen** Deploy-Schritt.
+- CI (`.github/workflows/build.yml`) führt denselben Befehl aus und stellt die JAR als Artefakt bereit. Bei Push auf `main` ersetzt der Job `release` das Pre-Release `latest` (Tag wird auf den neuen Commit verschoben) mit `IlluniumCustom.jar` und `.sha256`. Es gibt **keinen** Deploy auf einen Server.
 
 ## Lokaler Teststart
 
