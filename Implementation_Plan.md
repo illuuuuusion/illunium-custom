@@ -1,7 +1,7 @@
 # IlluniumCustom — Implementation Plan v1.0
 
 > **Stand:** 20.10.2026  
-> **Status:** Phase 0–6 umgesetzt (siehe [`docs/development.md`](./docs/development.md)); ab Phase 7 offen  
+> **Status:** Phase 0–7 umgesetzt (siehe [`docs/development.md`](./docs/development.md)); ab Phase 8 offen  
 > **Repository:** https://github.com/illuuuuusion/illunium-custom  
 > **Produktvertrag:** [`MVP.md`](./MVP.md) — bei Abweichungen ist dieser MVP für das Spielverhalten maßgeblich.  
 > **Zielruntime:** Minecraft/Paper **26.3**, Java **25**; gepinnt: Paper-Build **207** (STABLE), `paper-api 26.3.build.207-stable`.
@@ -431,10 +431,10 @@ Die Phasen sind in dieser Reihenfolge empfohlen. **Jede Phase hat einen klaren, 
 
 **Exit-Gate:**
 
-- [ ] Spieler sitzt sichtbar, `/sit` toggelt, `/unsit` steht auf.
-- [ ] Zwei Spieler können gleichzeitig sitzen, ohne sich gegenseitig zu beeinflussen.
-- [ ] Damage/Quit/Restart/WorldChange/Chunk-Reload bereinigt Sitzstatus und Helper-Entities.
-- [ ] Keine verwaisten plugin-eigenen Entities nach simuliertem Crash + Neustart.
+- [ ] Spieler sitzt sichtbar, `/sit` toggelt, `/unsit` steht auf. *(Implementiert; Sichtprüfung im Client-E2E Phase 8.)*
+- [ ] Zwei Spieler können gleichzeitig sitzen, ohne sich gegenseitig zu beeinflussen. *(Ein Stand pro Spieler; Client-E2E Phase 8.)*
+- [ ] Damage/Quit/Restart/WorldChange/Chunk-Reload bereinigt Sitzstatus und Helper-Entities. *(Chunk-Reload und Restart auf dem Testserver bestätigt; Spieler-Events im Client-E2E Phase 8.)*
+- [x] Keine verwaisten plugin-eigenen Entities nach simuliertem Crash + Neustart.
 
 **Review-/Commit-Schnitt:** `feat: add sit with reliable cleanup`.
 

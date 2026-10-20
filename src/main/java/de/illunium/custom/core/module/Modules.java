@@ -4,6 +4,7 @@ import de.illunium.custom.groups.GroupsModule;
 import de.illunium.custom.marriage.MarriageModule;
 import de.illunium.custom.playtime.PlaytimeModule;
 import de.illunium.custom.recipes.RecipesModule;
+import de.illunium.custom.sit.SitModule;
 import de.illunium.custom.whitelistguard.WhitelistGuardModule;
 import java.util.List;
 
@@ -19,7 +20,8 @@ public final class Modules {
                 new GroupsModule(),
                 new MarriageModule(),
                 new PlaytimeModule(),
-                new WhitelistGuardModule()
+                new WhitelistGuardModule(),
+                new SitModule()
         );
     }
 }

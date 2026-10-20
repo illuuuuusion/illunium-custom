@@ -88,6 +88,17 @@ Die **native** Minecraft-Whitelist bleibt die einzige Zugangsliste; es gibt kein
 
 Betriebsbasis in `server.properties`: `online-mode=true`, `white-list=true`, `enforce-whitelist=true`. **Launch:** `/whitelist add` berechtigt sofort. Namen vor dem Launch nur eintragen, solange der Server öffentlich nicht erreichbar ist.
 
+### Sit (`sit`)
+
+| Command | Effekt |
+| --- | --- |
+| `/sit` | Hinsetzen; erneut `/sit` steht wieder auf |
+| `/unsit` | Aufstehen |
+
+Nur auf festem Untergrund (Block, Stufe, Treppe, Teppich, …), nicht beim Fliegen/Gleiten, Schwimmen, in Wasser/Lava, beim Reiten, im Bett, im Fall oder als Zuschauer. Aufstehen per Sneaken, `/unsit` oder `/sit`; der Sitz endet außerdem bei Schaden, Tod, Teleport, Weltwechsel, Quit und Plugin-Stop. Nach dem Aufstehen steht der Spieler wieder an der Stelle, an der er sich gesetzt hat.
+
+Technisch: unsichtbarer Marker-ArmorStand pro Sitz, per PersistentDataContainer (`illuniumcustom:seat`) markiert und nicht persistent. Markierte Stands werden beim Start (geladene Welten), beim Laden/Entladen von Chunk-Entities und beim Join (nach Absturz als Fahrzeug gespeichert) entfernt; fremde ArmorStands bleiben unangetastet.
+
 ### Anzeige (Nametag/Tablist)
 
 - Über dem Kopf: `[TAG] Name` (Tag in Gruppenfarbe), Tablist: `[TAG] Name ❤`.
@@ -105,6 +116,7 @@ modules:             # <modul>: true|false, fehlende Module sind aktiv
   marriage: true
   playtime: true
   whitelistguard: true
+  sit: true
 storage:
   filename: data.db  # SQLite-Datei im Pluginordner
 marriage:
@@ -126,6 +138,7 @@ Ungültige Werte oder unbekannte Module verhindern den Start mit einer präzisen
 | `/group ...` | Gruppen, siehe oben | `illuniumcustom.use` |
 | `/marry ...` · `/divorce ...` | Marriage, siehe oben | `illuniumcustom.use` |
 | `/playtime [player]` | Spielzeit, siehe oben | `illuniumcustom.use` |
+| `/sit` · `/unsit` | Sitzen, siehe oben | `illuniumcustom.use` |
 
 ## Backup
 
