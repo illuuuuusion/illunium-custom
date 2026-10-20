@@ -38,3 +38,13 @@ java -jar paper.jar --nogui
 3. Eigene Einstellungen unter `<id>:` in `config.yml`; sie kommen als `context.settings()` an und werden in `enable` validiert.
 4. Persistente Daten nur über eine neue Migration; kein SQL auf Tabellen anderer Module.
 5. Commands über `context.plugin().registerCommand(...)` (Paper `BasicCommand`), Listener über den PluginManager. `disable()` muss auch nach einem fehlgeschlagenen `enable` aufräumen.
+
+## Grenzen
+
+- **Kein Hot-Reload.** Paper 26.3 hat kein `/reload` mehr; ein Disable/Enable zur Laufzeit (z. B. durch Plugin-Manager) scheitert an der Command-Registrierung. Das Plugin meldet das als `ERROR`, deaktiviert sich und räumt seine Rezepte auf. Änderungen immer per Server-Neustart.
+
+## Verifikation Phase 0–2 (20.10.2026, Paper 26.3 Build 207, Temurin 25.0.4.1)
+
+- `./gradlew clean check build --no-daemon`: 18 Tests grün, JAR bei zwei Builds bytegleich.
+- Lokaler Testserver ohne andere Plugins: Enable/Disable ohne Plugin-Fehler, zweiter Start migriert nicht erneut, ungültige Config bricht den Start sichtbar ab, `recipes: false` registriert nichts.
+- Rezept per `Server#getCraftingRecipe`/`craftItemResult` mit Wegwerf-Prüfplugin: verschiedene Gitterpositionen und Stack-Eingabe → genau 4 Quartz; Säule, gemeißelt, glatt, Ziegel und 2 Blöcke kein Treffer; Vanilla `4 Quartz → Quartz-Block` intakt; ein vorab unter unserem Key registriertes Fremdrezept wird ersetzt; genau ein Rezept im Namespace `illuniumcustom` nach jedem Start. Die API akzeptiert nur 3×3-Matrizen; das echte 2×2-Inventarfeld wird im Client-E2E (Phase 8) abgenommen.

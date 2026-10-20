@@ -31,6 +31,7 @@ java {
 tasks.compileJava {
     options.encoding = "UTF-8"
     options.release = 25
+    options.compilerArgs.add("-Xlint:deprecation")
 }
 
 tasks.processResources {

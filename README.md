@@ -16,12 +16,19 @@ Eigenständiges Paper-Plugin für die Illunium Forever-World. Produktvertrag: [`
 
 Ergebnis: `build/libs/IlluniumCustom-<version>.jar`. Details und lokaler Teststart: [`docs/development.md`](./docs/development.md).
 
+## Module
+
+### Recipes (`recipes`)
+
+Shapeless-Rezept `1 × Quartz-Block → 4 × Nether Quartz` (Key `illuniumcustom:quartz_from_quartz_block`), im 2×2- und 3×3-Feld, für alle Spieler ohne Permission. Nur der normale `QUARTZ_BLOCK` zählt, nicht Säule, gemeißelter, glatter Block oder Ziegel. Vanilla-Rezepte bleiben unverändert. Weitere Rezepte: `RecipesModule.recipes()` ergänzen.
+
 ## Konfiguration
 
 `plugins/IlluniumCustom/config.yml` (wird beim ersten Start angelegt, Änderungen gelten nach Neustart):
 
 ```yaml
-modules: {}          # <modul>: true|false, fehlende Module sind aktiv
+modules:             # <modul>: true|false, fehlende Module sind aktiv
+  recipes: true
 storage:
   filename: data.db  # SQLite-Datei im Pluginordner
 ```

@@ -1,7 +1,8 @@
 # IlluniumCustom configuration. Changes apply on server restart; no secrets belong here.
 
 # Feature modules (true/false). A module missing here is enabled.
-modules: {}
+modules:
+  recipes: true
 
 storage:
   # SQLite file inside the plugin folder.

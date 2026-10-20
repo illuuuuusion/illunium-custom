@@ -1,10 +1,10 @@
 # IlluniumCustom — Implementation Plan v1.0
 
 > **Stand:** 20.10.2026  
-> **Status:** umsetzungsbereiter Plan; **keine Implementierung durchgeführt**  
+> **Status:** Phase 0–2 umgesetzt (siehe [`docs/development.md`](./docs/development.md#verifikation-phase-02-20102026-paper-263-build-207-temurin-25041)); ab Phase 3 offen  
 > **Repository:** https://github.com/illuuuuusion/illunium-custom  
 > **Produktvertrag:** [`MVP.md`](./MVP.md) — bei Abweichungen ist dieser MVP für das Spielverhalten maßgeblich.  
-> **Zielruntime:** Minecraft/Paper **26.3**, Java **25**; Testbuild vor Implementierungsbeginn exakt festlegen.
+> **Zielruntime:** Minecraft/Paper **26.3**, Java **25**; gepinnt: Paper-Build **207** (STABLE), `paper-api 26.3.build.207-stable`.
 
 ## 0. Arbeitsmodus und Entscheidungsgrundlagen
 
@@ -278,10 +278,10 @@ Die Phasen sind in dieser Reihenfolge empfohlen. **Jede Phase hat einen klaren, 
 
 **Exit-Gate:**
 
-- [ ] Clean Checkout baut unter Java 25 deterministisch.
-- [ ] Paper 26.3 erkennt Plugin ohne andere Plugins, Enable/Disable zeigt keine Exceptions.
-- [ ] CI führt mindestens einen echten Test aus; generierte Build-Dateien/DB nicht im Git.
-- [ ] Keine Produktions-Deploy-Action im CI.
+- [x] Clean Checkout baut unter Java 25 deterministisch.
+- [x] Paper 26.3 erkennt Plugin ohne andere Plugins, Enable/Disable zeigt keine Exceptions.
+- [ ] CI führt mindestens einen echten Test aus; generierte Build-Dateien/DB nicht im Git. *(Workflow + Tests vorhanden, lokal grün; GitHub-Lauf erst nach Push nachweisbar.)*
+- [x] Keine Produktions-Deploy-Action im CI.
 
 **Vorgeschlagener Review-/Commit-Schnitt:** `chore: bootstrap standalone Paper plugin`.
 
@@ -299,10 +299,10 @@ Die Phasen sind in dieser Reihenfolge empfohlen. **Jede Phase hat einen klaren, 
 
 **Exit-Gate:**
 
-- [ ] Modul per Registry hinzufügen lässt Bootstrap unverändert bis auf einen Registry-Eintrag.
-- [ ] DB-Migration ist idempotent; falsches Schema erzeugt sichtbaren FAIL, keine stille Löschung.
-- [ ] Keine Bukkit-API auf DB-Executor; keine Main-Thread-Warteoperation für Storage.
-- [ ] Restart/Disable mit offenen Tasks erzeugt keinen Datenverlust durch Race Conditions.
+- [x] Modul per Registry hinzufügen lässt Bootstrap unverändert bis auf einen Registry-Eintrag.
+- [x] DB-Migration ist idempotent; falsches Schema erzeugt sichtbaren FAIL, keine stille Löschung.
+- [x] Keine Bukkit-API auf DB-Executor; keine Main-Thread-Warteoperation für Storage. *(Ausnahme: Migration und Profil-Ladevorgang beim Start.)*
+- [x] Restart/Disable mit offenen Tasks erzeugt keinen Datenverlust durch Race Conditions.
 
 **Review-/Commit-Schnitt:** `feat: add modular core and SQLite foundation`.
 
@@ -316,9 +316,9 @@ Die Phasen sind in dieser Reihenfolge empfohlen. **Jede Phase hat einen klaren, 
 
 **Exit-Gate:**
 
-- [ ] 2×2 und 3×3 funktionieren, Ausgabemenge korrekt.
-- [ ] Säulen/Chiseled/Smooth werden nicht akzeptiert.
-- [ ] Plugin-Neustart/erneute Registrierung führt zu keinen doppelten Rezepten.
+- [x] 2×2 und 3×3 funktionieren, Ausgabemenge korrekt. *(API-Smoke; 2×2-Inventarfeld im Client-E2E Phase 8 bestätigen.)*
+- [x] Säulen/Chiseled/Smooth werden nicht akzeptiert.
+- [x] Plugin-Neustart/erneute Registrierung führt zu keinen doppelten Rezepten.
 
 **Review-/Commit-Schnitt:** `feat: add reversible quartz recipe`.
 
