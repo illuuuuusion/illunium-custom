@@ -3,8 +3,9 @@ plugins {
 }
 
 group = "de.illunium"
-version = "0.1.0-SNAPSHOT"
+version = "0.1.0-rc.1"
 val pluginVersion = version.toString()
+val paperApi = "26.3.build.207-stable"
 
 repositories {
     mavenCentral()
@@ -14,10 +15,10 @@ repositories {
 }
 
 dependencies {
-    compileOnly("io.papermc.paper:paper-api:26.3.build.207-stable")
+    compileOnly("io.papermc.paper:paper-api:$paperApi")
     implementation("org.xerial:sqlite-jdbc:3.53.4.0")
 
-    testImplementation("io.papermc.paper:paper-api:26.3.build.207-stable")
+    testImplementation("io.papermc.paper:paper-api:$paperApi")
     testImplementation("org.junit.jupiter:junit-jupiter:5.14.4")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher:1.14.4")
 }
@@ -48,6 +49,14 @@ tasks.test {
 
 tasks.jar {
     archiveBaseName = "IlluniumCustom"
+    manifest {
+        attributes(
+            "Implementation-Title" to "IlluniumCustom",
+            "Implementation-Version" to pluginVersion,
+            "Built-Against-Paper-API" to paperApi,
+            "Built-With-Java" to "25",
+        )
+    }
     // Bundle sqlite-jdbc unrelocated: relocation would break its JNI bindings.
     from(configurations.runtimeClasspath.map { classpath -> classpath.map { zipTree(it) } })
     exclude("META-INF/MANIFEST.MF", "META-INF/*.SF", "META-INF/*.DSA", "META-INF/*.RSA", "META-INF/versions/*/module-info.class", "module-info.class")

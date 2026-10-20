@@ -1,7 +1,7 @@
 # IlluniumCustom — Implementation Plan v1.0
 
 > **Stand:** 20.10.2026  
-> **Status:** Phase 0–7 umgesetzt (siehe [`docs/development.md`](./docs/development.md)); ab Phase 8 offen  
+> **Status:** Phase 0–8 umgesetzt bis auf die Client-E2E-Abnahme (siehe [`docs/development.md`](./docs/development.md)); Release Candidate `0.1.0-rc.1`, Produktionsfreigabe offen  
 > **Repository:** https://github.com/illuuuuusion/illunium-custom  
 > **Produktvertrag:** [`MVP.md`](./MVP.md) — bei Abweichungen ist dieser MVP für das Spielverhalten maßgeblich.  
 > **Zielruntime:** Minecraft/Paper **26.3**, Java **25**; gepinnt: Paper-Build **207** (STABLE), `paper-api 26.3.build.207-stable`.
@@ -453,12 +453,12 @@ Die Phasen sind in dieser Reihenfolge empfohlen. **Jede Phase hat einen klaren, 
 
 **Exit-Gate:**
 
-- [ ] **Alle** DoD-Kriterien aus [`MVP.md`](./MVP.md) sind mit Testnachweis erfüllt.
-- [ ] Paper-Build, Java-Version, JAR-Hash, SQLite-Schema und Config-Version festgehalten.
-- [ ] Kein `ERROR`/`SEVERE`/unerwarteter Exception im frischen Start-/Smoke-Log.
-- [ ] Backup und praktischer Restore bestanden; Rückrollpfad dokumentiert.
-- [ ] Negative Permission-/Whitelist-Tests bestanden.
-- [ ] Installation auf einem frischen Paper 26.3 **ohne andere Plugins** erfolgreich.
+- [ ] **Alle** DoD-Kriterien aus [`MVP.md`](./MVP.md) sind mit Testnachweis erfüllt. *(Offen: Gameplay-Abnahme mit Vanilla-Clients, Checkliste in [`docs/operations.md`](./docs/operations.md).)*
+- [x] Paper-Build, Java-Version, JAR-Hash, SQLite-Schema und Config-Version festgehalten.
+- [x] Kein `ERROR`/`SEVERE`/unerwarteter Exception im frischen Start-/Smoke-Log.
+- [x] Backup und praktischer Restore bestanden; Rückrollpfad dokumentiert.
+- [ ] Negative Permission-/Whitelist-Tests bestanden. *(Code-Review und Server-Smoke bestanden; Nicht-OP-Spieler und Login-Ablehnung im Client-E2E.)*
+- [x] Installation auf einem frischen Paper 26.3 **ohne andere Plugins** erfolgreich.
 - [ ] Verantwortliche Person hat **separat** produktiven Rollout freigegeben.
 
 **Review-/Commit-Schnitt:** `test/docs: finalize IlluniumCustom MVP release candidate`.

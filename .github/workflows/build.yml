@@ -24,11 +24,27 @@ jobs:
       - name: Build
         run: ./gradlew clean check build --no-daemon
 
+      - name: Hash and build info
+        run: |
+          cd build/libs
+          sha256sum IlluniumCustom-*.jar > SHA256SUMS
+          {
+            echo "commit=$GITHUB_SHA"
+            echo "jar=$(ls IlluniumCustom-*.jar)"
+            echo "java=$(java -version 2>&1 | head -1)"
+            echo "paper-api=26.3.build.207-stable"
+            echo "schema=$(ls ../../src/main/resources/db/migrations | wc -l)"
+          } > build-info.txt
+          cat SHA256SUMS build-info.txt
+
       - name: Upload plugin JAR
         uses: actions/upload-artifact@v7
         with:
           name: IlluniumCustom
-          path: build/libs/IlluniumCustom-*.jar
+          path: |
+            build/libs/IlluniumCustom-*.jar
+            build/libs/SHA256SUMS
+            build/libs/build-info.txt
           if-no-files-found: error
 
   # Rolling "latest" release: replaced on every push to main, so the newest JAR is always downloadable.
@@ -55,7 +71,7 @@ jobs:
           mv IlluniumCustom-*.jar IlluniumCustom.jar
           sha256sum IlluniumCustom.jar > IlluniumCustom.jar.sha256
           gh release delete latest --yes --cleanup-tag || true
-          gh release create latest IlluniumCustom.jar IlluniumCustom.jar.sha256 \
+          gh release create latest IlluniumCustom.jar IlluniumCustom.jar.sha256 build-info.txt \
             --target "$GITHUB_SHA" \
             --prerelease \
             --title "Latest build (${GITHUB_SHA::7})" \

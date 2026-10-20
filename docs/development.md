@@ -7,7 +7,7 @@
 ```
 
 - Gradle Wrapper und Java-25-Toolchain sind festgelegt; `paper-api` ist exakt auf `26.3.build.207-stable` gepinnt (`compileOnly`).
-- CI (`.github/workflows/build.yml`) führt denselben Befehl aus und stellt die JAR als Artefakt bereit. Bei Push auf `main` ersetzt der Job `release` das Pre-Release `latest` (Tag wird auf den neuen Commit verschoben) mit `IlluniumCustom.jar` und `.sha256`. Es gibt **keinen** Deploy auf einen Server.
+- CI (`.github/workflows/build.yml`) führt denselben Befehl aus und stellt die JAR als Artefakt bereit. Bei Push auf `main` ersetzt der Job `release` das Pre-Release `latest` (Tag wird auf den neuen Commit verschoben) mit `IlluniumCustom.jar`, `.sha256` und `build-info.txt` (Commit, Java, Paper-API, Schema); das Build-Artefakt enthält zusätzlich `SHA256SUMS`. Das JAR-Manifest trägt Version, Paper-API und Java-Version. Es gibt **keinen** Deploy auf einen Server.
 
 ## Lokaler Teststart
 
@@ -24,15 +24,7 @@ java -jar paper.jar --nogui
 
 `run/` ist in `.gitignore`. Erwartung im Log: `Enabling IlluniumCustom`, beim `stop` `Disabling IlluniumCustom`, keine `ERROR`/`SEVERE`-Zeilen des Plugins.
 
-## Architektur-Kern
-
-- **Bootstrap** (`IlluniumCustomPlugin`): Config laden/validieren → SQLite öffnen + migrieren → `PlayerIdentityService` → Module in Registry-Reihenfolge aktivieren → `/ic` registrieren. Jeder Fehler deaktiviert das **ganze** Plugin (kein Teilstart). Disable: Module in umgekehrter Reihenfolge, danach DB-Queue abarbeiten und schließen.
-- **Storage** (`storage.Database`): eine SQLite-Connection auf einem eigenen Thread (`IlluniumCustom-DB`); `transaction(work)` läuft geordnet, committet oder rollt zurück und liefert ein `CompletableFuture`. In `work` **keine** Bukkit-API; Folgeschritte mit `.thenAcceptAsync(..., context.mainThread())` zurück auf den Server-Thread. Nur Startup blockiert auf Storage.
-- **Migrationen**: `src/main/resources/db/migrations/V<n>__*.sql`, in `Database.MIGRATIONS` angehängt. Ausgelieferte Skripte nie ändern, sondern neue additive Migration. Ein neueres Schema als bekannt oder kollidierende Tabellen brechen den Start ab; es wird nichts gelöscht.
-- **Identitäten**: UUID ist die Identität, `last_known_name` wird beim Join aktualisiert. `findByName` kann bei Namenswechseln mehrere UUIDs liefern.
-- **Mutationen** (Muster aus `groups`): Der Service prüft alle Regeln **in** der Transaktion gegen den committeten Zustand und lädt die betroffene Zeile im selben Commit neu; der In-Memory-Stand wird erst danach auf dem Main Thread ersetzt. Gleichzeitige Commands laufen dadurch geordnet und hinterlassen keine halben Änderungen; Constraints in der DB sind die zweite Sicherung. Regelverstöße sind `UserException` (Text geht an den Spieler), `context.reply(...)` liefert Erfolg/Fehler auf dem Main Thread aus und loggt alles andere als `SEVERE`.
-- **Appearance** (`appearance.AppearanceService`, Core-Service vor den Modulen): einziger Eigentümer von Nametag/Tablist. Module melden nur Daten (`setPrefix` = Nametag + Tablist, `setSuffix` = nur Tablist) für Online-Spieler; Offline-Meldungen werden ignoriert, Module melden beim Join erneut. Jede Änderung rendert genau einen Spieler und nur, wenn sich der Wert geändert hat. Entscheidung: **Haupt-Scoreboard** (alle Zuschauer sehen dasselbe, keine per-Viewer-Boards nötig), ein Team `illuniumcustom_<uuid>` pro Spieler mit Prefix; in der Tablist ein expliziter `playerListName` (Prefix + Name + Suffix). Der Vanilla-Client zeigt bei gesetztem Tablist-Namen die Team-Dekoration nicht zusätzlich an, daher kein doppelter Tag. Das Haupt-Scoreboard wird mit der Welt gespeichert, deshalb räumt der Start alle eigenen Teams auf.
-- **Flüchtige Anfragen** (Einladungen, Bestätigungen): `core.ExpiringMap`, gültig solange `jetzt < erstellt + TTL`, nur Main Thread, kein Persistieren.
+Architektur: [`architecture.md`](./architecture.md).
 
 ## Neues Modul hinzufügen
 
@@ -41,10 +33,6 @@ java -jar paper.jar --nogui
 3. Eigene Einstellungen unter `<id>:` in `config.yml`; sie kommen als `context.settings()` an und werden in `enable` validiert.
 4. Persistente Daten nur über eine neue Migration; kein SQL auf Tabellen anderer Module.
 5. Commands über `context.plugin().registerCommand(...)` (Paper `BasicCommand`), Admin-Subcommands über `context.admin().register("<name>", ...)` (→ `/ic <name>`, automatisch `illuniumcustom.admin`), Listener über den PluginManager. `disable()` muss auch nach einem fehlgeschlagenen `enable` aufräumen.
-
-## Grenzen
-
-- **Kein Hot-Reload.** Paper 26.3 hat kein `/reload` mehr; ein Disable/Enable zur Laufzeit (z. B. durch Plugin-Manager) scheitert an der Command-Registrierung. Das Plugin meldet das als `ERROR`, deaktiviert sich und räumt seine Rezepte auf. Änderungen immer per Server-Neustart.
 
 ## Verifikation Phase 0–2 (20.10.2026, Paper 26.3 Build 207, Temurin 25.0.4.1)
 
@@ -85,3 +73,14 @@ java -jar paper.jar --nogui
 - Zustand: `SITTING` genau solange ein Eintrag in `seats` existiert; jeder Ausstieg läuft über `standUp`, das zuerst den Eintrag und dann den Stand entfernt. Dadurch ist das beim Entfernen ausgelöste Dismount-Event ein No-op, wiederholtes `/sit` toggelt ohne zusätzliche Entities.
 - Testserver: getaggter Sitz (`BukkitValues:{"illuniumcustom:seat":1b}`) und fremder ArmorStand in einem forceloaded Chunk, `save-all flush`, `kill -9`, Neustart → Sitz entfernt (Entity-Load), fremder Stand erhalten. Getaggter Stand in einem Chunk, der entladen und neu geladen wird → entfernt. Enable/Disable ohne Plugin-Fehler.
 - **Offen für Client-E2E (Phase 8):** sichtbares Sitzen, Sitzhöhe auf Block/Stufe/Treppe, Aufstehen per Sneaken mit Rücksetzen auf die Sitzstelle, zwei gleichzeitig Sitzende, Schaden/Teleport/Weltwechsel/Quit/Neustart während des Sitzens.
+
+## Verifikation Phase 8 — Release Candidate 0.1.0-rc.1 (21.10.2026)
+
+Umgebung: Paper 26.3 Build 207 (`26.3-207-main@bc68acd`), Temurin 25.0.4.1, WSL2. JAR `IlluniumCustom-0.1.0-rc.1.jar`, SHA-256 `5431edbdc6c27be1bd52b2fc631c0eca6a52abe133d5ee5174fa338988c6fa75` (zwei Clean-Builds bytegleich), Schema v1.
+
+- `./gradlew clean check build --no-daemon`: 52 Tests in 13 Klassen, 0 Fehler.
+- **Frische Installation** (leeres Serververzeichnis, Default-Welt, `online-mode=true`, keine anderen Plugins, keine Config/DB): Config und `data.db` angelegt, alle sechs Module aktiv, einzige Plugin-Warnung `Whitelist enforcement was off; turning it on`; Start und Stop ohne `ERROR`/`SEVERE`/Exception.
+- **Backup/Restore:** gespeicherte Spielzeit (`Steve`, 1h 2m) online per `sqlite3 ".backup"` gesichert (`integrity_check` ok), Server gestoppt, `data.db*` gelöscht → `Unknown player steve.`; Backup zurückgespielt → wieder `1h 2m`.
+- **Rollback-Erkennung:** `schema_migrations` um Version 2 ergänzt → Start bricht mit `Database schema v2 is newer than supported v1; restore a matching plugin version or database backup` ab, Plugin deaktiviert, keine Commands registriert, Daten unverändert.
+- **Security-Review** (Code): SQL nur als konstante Strings mit gebundenen Parametern (einzige Verkettung: Migrationsnummer aus dem Code); Eingaben per Regex/Längen/Enum validiert, Staff nur mit v4-UUID und geprüftem Profil; jeder Spieler-Command mit `illuniumcustom.use`, `/ic` mit `illuniumcustom.admin`; Bukkit-API nur auf dem Main Thread, async Ergebnisse über `context.mainThread()`; gelöscht werden nur eigene Teams/Rezepte/Sitz-Entities, nie Whitelist-Einträge. Testserver-Nachweise dazu in Phase 4, 6 und 7.
+- **Nicht durchgeführt (braucht echte Vanilla-Clients und mehrere Accounts):** die Gameplay-Abnahme aus [`operations.md`](./operations.md#gameplay-abnahme-testserver-vanilla-client), darunter Whitelist-Login/-Ablehnung, Permission-Negativtests als Nicht-OP-Spieler, Nametag/Tablist/Herz-Sichtprüfung, 2×2-Rezept, Sit-Sichtprüfung und Playtime-Session über Neustart. Bis dahin ist `0.1.0-rc.1` **nicht** produktionsfreigegeben.

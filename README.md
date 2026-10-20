@@ -1,6 +1,6 @@
 # IlluniumCustom
 
-Eigenständiges Paper-Plugin für die Illunium Forever-World. Produktvertrag: [`MVP.md`](./MVP.md), Umsetzung: [`Implementation_Plan.md`](./Implementation_Plan.md).
+Eigenständiges Paper-Plugin für die Illunium Forever-World: Quartz-Rezept, Gruppen, Marriage, Playtime, Whitelist-Schutz und Sitzen in **einer** JAR, ohne weitere Plugins. Produktvertrag: [`MVP.md`](./MVP.md), Umsetzung: [`Implementation_Plan.md`](./Implementation_Plan.md), Änderungen: [`CHANGELOG.md`](./CHANGELOG.md).
 
 ## Voraussetzungen
 
@@ -14,7 +14,7 @@ Eigenständiges Paper-Plugin für die Illunium Forever-World. Produktvertrag: [`
 ./gradlew clean check build --no-daemon
 ```
 
-Ergebnis: `build/libs/IlluniumCustom-<version>.jar`.
+Ergebnis: `build/libs/IlluniumCustom-<version>.jar` (bytegleich reproduzierbar).
 
 ## Download
 
@@ -22,127 +22,31 @@ Jeder Push auf `main` baut und ersetzt das Release [`latest`](https://github.com
 
 - JAR: https://github.com/illuuuuusion/illunium-custom/releases/download/latest/IlluniumCustom.jar
 - SHA-256: https://github.com/illuuuuusion/illunium-custom/releases/download/latest/IlluniumCustom.jar.sha256
+- Build-Info (Commit, Java, Paper-API, Schema): https://github.com/illuuuuusion/illunium-custom/releases/download/latest/build-info.txt
 
-Das ist ein Entwicklungsbuild, keine Produktionsfreigabe; vor jedem Rollout auf dem Testserver prüfen. Details und lokaler Teststart: [`docs/development.md`](./docs/development.md).
+Das ist ein Entwicklungsbuild, keine Produktionsfreigabe; vor jedem Rollout auf dem Testserver prüfen.
 
-## Module
+## Installation
 
-### Recipes (`recipes`)
+1. JAR nach `plugins/` eines Paper-26.3-Servers kopieren (Hash prüfen), Server starten.
+2. `server.properties`: `online-mode=true`, `white-list=true`, `enforce-whitelist=true` (der Whitelist Guard schaltet die beiden Whitelist-Werte notfalls selbst ein).
+3. `plugins/IlluniumCustom/config.yml` anpassen (vor allem `whitelistguard.staff`), Server neu starten.
+4. Spieler mit Vanilla `/whitelist add <Name>` freischalten.
 
-Shapeless-Rezept `1 × Quartz-Block → 4 × Nether Quartz` (Key `illuniumcustom:quartz_from_quartz_block`), im 2×2- und 3×3-Feld, für alle Spieler ohne Permission. Nur der normale `QUARTZ_BLOCK` zählt, nicht Säule, gemeißelter, glatter Block oder Ziegel. Vanilla-Rezepte bleiben unverändert. Weitere Rezepte: `RecipesModule.recipes()` ergänzen.
-
-### Groups (`groups`)
-
-Soziale Gruppen mit Name (1–16 Zeichen), Tag (1–5 Zeichen, jeweils `A-Z a-z 0-9 _ -`, case-insensitiv eindeutig) und Farbe (eine der 16 Minecraft-Farben, Standard `white`). Pro Spieler höchstens eine Gruppe, genau ein Leader, beliebig viele Mods.
-
-| Command | Effekt | Rolle |
-| --- | --- | --- |
-| `/group create <name> <tag>` | Gruppe gründen | gruppenlos |
-| `/group list` · `/group info [group]` | Gruppen / Gruppeninfo | jeder (auch Konsole) |
-| `/group members` | Mitglieder mit Rollen | Mitglied |
-| `/group invite <player>` · `/group uninvite <player>` | Einladung (5 Minuten gültig, nur an Online-Spieler) senden/zurückziehen | Leader, Mod |
-| `/group accept <group>` · `/group deny <group>` | Einladung annehmen/ablehnen | Eingeladener |
-| `/group kick <player>` | Member entfernen (Leader auch Mods) | Leader, Mod |
-| `/group promote <player>` · `/group demote <player>` | Member ↔ Mod | Leader |
-| `/group rename <name>` · `/group tag <tag>` · `/group color <color>` | Darstellung ändern | Leader |
-| `/group transfer <player>` · `/group disband` | Leader übertragen (alter Leader wird Mod) / auflösen, jeweils mit Bestätigung | Leader |
-| `/group confirm` · `/group cancel` | Bestätigung (30 Sekunden gültig) / Abbruch | Leader |
-| `/group leave` | Gruppe verlassen; Leader müssen vorher übertragen oder auflösen | Mod, Member |
-
-Kick/Promote/Demote/Transfer funktionieren auch für offline Mitglieder (letzter bekannter Name). Einladungen und offene Bestätigungen sind flüchtig und verfallen beim Neustart. Bei `accept` wird erneut geprüft: Frist, Gruppe existiert noch, Einladender ist noch Leader/Mod, Spieler ist noch gruppenlos.
-
-Admin-Recovery (`illuniumcustom.admin`, jede Änderung wird mit Absender geloggt):
-
-- `/ic group inspect <group>` — gespeicherten Zustand und Leader-Invariante prüfen
-- `/ic group setleader <group> <player>` — Leader neu setzen (Ziel muss Mitglied sein; bisheriger Leader wird Mod)
-- `/ic group disband <group>` — Gruppe sofort auflösen
-
-### Marriage (`marriage`)
-
-| Command | Effekt |
-| --- | --- |
-| `/marry <player>` | Antrag an einen Online-Spieler (5 Minuten gültig, pro Empfänger nur einer) |
-| `/marry accept` · `/marry deny` | Antrag annehmen/ablehnen |
-| `/marry info [player]` | Beziehungsstatus (auch offline Spieler, auch Konsole mit Name) |
-| `/divorce` · `/divorce confirm` · `/divorce cancel` | Einseitige Scheidung mit Bestätigung (30 Sekunden) |
-
-Höchstens eine Ehe pro UUID, keine Selbstheirat; Ehen überstehen Quit, Namenswechsel und Neustart, Anträge nicht.
-
-### Playtime (`playtime`)
-
-| Command | Effekt |
-| --- | --- |
-| `/playtime` | Eigene Spielzeit |
-| `/playtime <player>` | Spielzeit eines bekannten Spielers, auch offline (letzter bekannter Name; Konsole nur mit Name) |
-
-Gezählt wird ab der ersten Aktivierung des Plugins, sekundengenau, Ausgabe als `1d 2h 3m`; die laufende Session ist sofort enthalten. Gespeichert wird beim Quit, alle 60 Sekunden und beim geordneten Shutdown. Bei einem Absturz fehlt höchstens die Zeit seit dem letzten Checkpoint (≤ 60 s pro Spieler); doppelt gezählt wird nichts. Kein Leaderboard, keine AFK-Erkennung.
-
-### Whitelist Guard (`whitelistguard`)
-
-Die **native** Minecraft-Whitelist bleibt die einzige Zugangsliste; es gibt keine zweite Liste und keine eigenen Access-Commands. Spieler werden mit Vanilla verwaltet: `/whitelist add|remove|list|reload` (funktioniert auch für Accounts, die noch nie gejoint sind, solange Mojang erreichbar ist).
-
-- Beim Start und alle `check-interval-seconds` (Standard 30): `white-list` und `enforce-whitelist` werden eingeschaltet, falls aus (Warnung im Log, Wert landet in `server.properties`).
-- `staff`: geschützte Server-Staff-Accounts (**nicht** Gruppen-Mods) als `{uuid, name}`. Jeder Eintrag wird pro Start einmal bei Mojang geprüft (UUID muss existieren und aktuell diesen Namen tragen). Nur geprüfte Einträge werden nach einem versehentlichen `/whitelist remove` wieder eingetragen. Fehlerhafte oder nicht auflösbare Einträge werden nie freigeschaltet und als `ERROR` geloggt. Offline-Mode-UUIDs (Version 3) werden abgelehnt.
-- Das Plugin entfernt oder ändert **keine** anderen Whitelist-Einträge und vergibt keine Rechte. Ein Operator/die Konsole kann die Whitelist weiterhin bewusst ändern; der Guard repariert Fehlkonfiguration, schützt aber nicht vor böswilligen Admins.
-- `online-mode=false` wird bei jedem Start als `ERROR` gemeldet.
-
-Betriebsbasis in `server.properties`: `online-mode=true`, `white-list=true`, `enforce-whitelist=true`. **Launch:** `/whitelist add` berechtigt sofort. Namen vor dem Launch nur eintragen, solange der Server öffentlich nicht erreichbar ist.
-
-### Sit (`sit`)
-
-| Command | Effekt |
-| --- | --- |
-| `/sit` | Hinsetzen; erneut `/sit` steht wieder auf |
-| `/unsit` | Aufstehen |
-
-Nur auf festem Untergrund (Block, Stufe, Treppe, Teppich, …), nicht beim Fliegen/Gleiten, Schwimmen, in Wasser/Lava, beim Reiten, im Bett, im Fall oder als Zuschauer. Aufstehen per Sneaken, `/unsit` oder `/sit`; der Sitz endet außerdem bei Schaden, Tod, Teleport, Weltwechsel, Quit und Plugin-Stop. Nach dem Aufstehen steht der Spieler wieder an der Stelle, an der er sich gesetzt hat.
-
-Technisch: unsichtbarer Marker-ArmorStand pro Sitz, per PersistentDataContainer (`illuniumcustom:seat`) markiert und nicht persistent. Markierte Stands werden beim Start (geladene Welten), beim Laden/Entladen von Chunk-Entities und beim Join (nach Absturz als Fahrzeug gespeichert) entfernt; fremde ArmorStands bleiben unangetastet.
-
-### Anzeige (Nametag/Tablist)
-
-- Über dem Kopf: `[TAG] Name` (Tag in Gruppenfarbe), Tablist: `[TAG] Name ❤`.
-- Herz nur in der Tablist, für alle Zuschauer: rotes `❤` wenn der Partner online ist, sonst graues `💔` (`marriage.offline-symbol`).
-- Technisch: Haupt-Scoreboard, ein Team `illuniumcustom_<uuid>` pro dekoriertem Online-Spieler plus expliziter Tablist-Name. Teams mit diesem Präfix gehören ausschließlich dem Plugin und werden beim Start (auch nach Absturz) und Stop entfernt; fremde Teams bleiben unangetastet. Ein Spieler, den ein anderes Plugin oder `/team` in ein eigenes Team setzt, verliert dort beim Dekorieren seine Teamzugehörigkeit — Kompatibilität mit anderen Scoreboard-Plugins ist kein MVP-Ziel.
-
-## Konfiguration
-
-`plugins/IlluniumCustom/config.yml` (wird beim ersten Start angelegt, Änderungen gelten nach Neustart):
-
-```yaml
-modules:             # <modul>: true|false, fehlende Module sind aktiv
-  recipes: true
-  groups: true
-  marriage: true
-  playtime: true
-  whitelistguard: true
-  sit: true
-storage:
-  filename: data.db  # SQLite-Datei im Pluginordner
-marriage:
-  offline-symbol: "💔"  # Tablist-Zeichen bei offline Partner; falls der Vanilla-Font es nicht darstellt z. B. "✕❤"
-whitelistguard:
-  check-interval-seconds: 30   # 5..3600
-  staff:                       # geschützte Staff-Accounts: Mojang-UUID + aktueller Name
-    - {uuid: "069a79f4-44e9-4726-a5be-fca90e38aaf5", name: "Notch"}
-```
-
-Ungültige Werte oder unbekannte Module verhindern den Start mit einer präzisen Fehlermeldung im Log.
+Deployment, Launch, Backup/Restore und Rollback: [`docs/operations.md`](./docs/operations.md).
 
 ## Commands
 
 | Command | Effekt | Permission |
 | --- | --- | --- |
-| `/illuniumcustom status` (`/ic status`) | Version, Schema-Version, aktive Module | `illuniumcustom.admin` |
-| `/ic group ...` | Gruppen-Recovery, siehe oben | `illuniumcustom.admin` |
-| `/group ...` | Gruppen, siehe oben | `illuniumcustom.use` |
-| `/marry ...` · `/divorce ...` | Marriage, siehe oben | `illuniumcustom.use` |
-| `/playtime [player]` | Spielzeit, siehe oben | `illuniumcustom.use` |
-| `/sit` · `/unsit` | Sitzen, siehe oben | `illuniumcustom.use` |
+| `/group create\|list\|info\|members\|invite\|uninvite\|accept\|deny\|kick\|promote\|demote\|rename\|tag\|color\|transfer\|disband\|confirm\|cancel\|leave` | Gruppen mit Tag, Farbe und Rollen Leader/Mod/Member | `illuniumcustom.use` |
+| `/marry <player>\|accept\|deny\|info [player]` · `/divorce [confirm\|cancel]` | Partnerschaft, Herz in der Tablist | `illuniumcustom.use` |
+| `/playtime [player]` | Spielzeit, auch offline | `illuniumcustom.use` |
+| `/sit` · `/unsit` | Hinsetzen/Aufstehen | `illuniumcustom.use` |
+| `/ic status` · `/ic group inspect\|setleader\|disband ...` | Diagnose, Gruppen-Recovery | `illuniumcustom.admin` |
+| Vanilla `/whitelist add\|remove\|list\|reload` | Zugang (native Whitelist, nicht vom Plugin) | Vanilla/OP |
 
-## Backup
-
-`data.db` läuft im WAL-Modus. Nur bei gestopptem Server kopieren (inkl. evtl. `data.db-wal`/`data.db-shm`) oder online mit `sqlite3 data.db ".backup backup.db"`.
+Rollenmatrix, Regeln und Verhalten aller Module: [`docs/commands.md`](./docs/commands.md). Das Quartz-Rezept (`1 × Quartz-Block → 4 × Nether Quartz`) braucht keinen Command.
 
 ## Permissions
 
@@ -150,3 +54,15 @@ Ungültige Werte oder unbekannte Module verhindern den Start mit einer präzisen
 | --- | --- | --- |
 | `illuniumcustom.use` | Öffentliche Plugin-Kommandos | `true` |
 | `illuniumcustom.admin` | Notfall-/Diagnose-Commands | `op` |
+
+## Konfiguration
+
+`plugins/IlluniumCustom/config.yml`, wird beim ersten Start angelegt; Änderungen gelten nach Neustart, ungültige Werte verhindern den Start mit präziser Meldung. Alle Schlüssel: [`docs/configuration.md`](./docs/configuration.md).
+
+## Backup und Restore
+
+Zu sichern: `plugins/IlluniumCustom/` (`data.db`, `config.yml`) und die native `whitelist.json` des Servers. `data.db` läuft im WAL-Modus: online nur mit `sqlite3 data.db ".backup backup.db"`, sonst bei gestopptem Server inklusive `data.db-wal`/`data.db-shm` kopieren. Restore: Server stoppen, `data.db` ersetzen, alte `-wal`/`-shm` löschen, starten. Details: [`docs/operations.md`](./docs/operations.md).
+
+## Entwicklung
+
+Lokaler Testserver, Modulvertrag und Testnachweise: [`docs/development.md`](./docs/development.md), Architektur: [`docs/architecture.md`](./docs/architecture.md).

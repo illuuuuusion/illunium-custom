@@ -21,7 +21,7 @@ class PluginMetadataTest {
             assertTrue(metadata.contains("api-version: '26.3'"));
             assertTrue(metadata.contains("illuniumcustom.use:"));
             assertTrue(metadata.contains("illuniumcustom.admin:"));
-            assertTrue(metadata.contains("version: '0.1.0-SNAPSHOT'"));
+            assertTrue(metadata.contains("version: '0.1.0-rc.1'"));
             assertFalse(metadata.contains("${version}"));
             assertFalse(metadata.contains("depend:"), "must not depend on other plugins");
         }
