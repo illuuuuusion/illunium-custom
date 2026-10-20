@@ -1,0 +1,12 @@
+name: IlluniumCustom
+version: '${version}'
+main: de.illunium.custom.IlluniumCustomPlugin
+description: Community features for the Illunium Forever-World
+api-version: '26.3'
+permissions:
+  illuniumcustom.use:
+    description: Public plugin commands (group, playtime, marry, sit)
+    default: true
+  illuniumcustom.admin:
+    description: Emergency and diagnostic commands
+    default: op
