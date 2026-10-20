@@ -1,5 +1,6 @@
 package de.illunium.custom;
 
+import de.illunium.custom.appearance.AppearanceService;
 import de.illunium.custom.core.command.AdminCommand;
 import de.illunium.custom.core.config.PluginConfig;
 import de.illunium.custom.core.identity.PlayerIdentityService;
@@ -22,6 +23,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 public final class IlluniumCustomPlugin extends JavaPlugin {
 
     private Database database;
+    private AppearanceService appearance;
     private final Deque<FeatureModule> startedModules = new ArrayDeque<>();
 
     @Override
@@ -49,6 +51,7 @@ public final class IlluniumCustomPlugin extends JavaPlugin {
         for (Player player : getServer().getOnlinePlayers()) {
             identities.remember(player.getUniqueId(), player.getName());
         }
+        appearance = AppearanceService.start(this);
 
         Executor mainThread = task -> {
             if (!isEnabled()) {
@@ -74,6 +77,7 @@ public final class IlluniumCustomPlugin extends JavaPlugin {
                     Objects.requireNonNullElseGet(yaml.getConfigurationSection(module.id()), () -> yaml.createSection(module.id())),
                     database,
                     identities,
+                    appearance,
                     admin,
                     mainThread
             ));
@@ -88,7 +92,7 @@ public final class IlluniumCustomPlugin extends JavaPlugin {
 
     @Override
     public void onDisable() {
-        // Reverse order: modules flush their data through the still-open database first.
+        // Reverse order: modules flush their data through the still-open database first, then nametags are reset.
         while (!startedModules.isEmpty()) {
             FeatureModule module = startedModules.pop();
             try {
@@ -96,6 +100,14 @@ public final class IlluniumCustomPlugin extends JavaPlugin {
             } catch (RuntimeException e) {
                 getLogger().log(Level.SEVERE, "Module " + module.id() + " failed to disable cleanly", e);
             }
+        }
+        if (appearance != null) {
+            try {
+                appearance.close();
+            } catch (RuntimeException e) {
+                getLogger().log(Level.SEVERE, "Appearance did not clean up", e);
+            }
+            appearance = null;
         }
         if (database != null) {
             try {

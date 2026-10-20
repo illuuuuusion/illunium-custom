@@ -57,6 +57,23 @@ Admin-Recovery (`illuniumcustom.admin`, jede Änderung wird mit Absender geloggt
 - `/ic group setleader <group> <player>` — Leader neu setzen (Ziel muss Mitglied sein; bisheriger Leader wird Mod)
 - `/ic group disband <group>` — Gruppe sofort auflösen
 
+### Marriage (`marriage`)
+
+| Command | Effekt |
+| --- | --- |
+| `/marry <player>` | Antrag an einen Online-Spieler (5 Minuten gültig, pro Empfänger nur einer) |
+| `/marry accept` · `/marry deny` | Antrag annehmen/ablehnen |
+| `/marry info [player]` | Beziehungsstatus (auch offline Spieler, auch Konsole mit Name) |
+| `/divorce` · `/divorce confirm` · `/divorce cancel` | Einseitige Scheidung mit Bestätigung (30 Sekunden) |
+
+Höchstens eine Ehe pro UUID, keine Selbstheirat; Ehen überstehen Quit, Namenswechsel und Neustart, Anträge nicht.
+
+### Anzeige (Nametag/Tablist)
+
+- Über dem Kopf: `[TAG] Name` (Tag in Gruppenfarbe), Tablist: `[TAG] Name ❤`.
+- Herz nur in der Tablist, für alle Zuschauer: rotes `❤` wenn der Partner online ist, sonst graues `💔` (`marriage.offline-symbol`).
+- Technisch: Haupt-Scoreboard, ein Team `illuniumcustom_<uuid>` pro dekoriertem Online-Spieler plus expliziter Tablist-Name. Teams mit diesem Präfix gehören ausschließlich dem Plugin und werden beim Start (auch nach Absturz) und Stop entfernt; fremde Teams bleiben unangetastet. Ein Spieler, den ein anderes Plugin oder `/team` in ein eigenes Team setzt, verliert dort beim Dekorieren seine Teamzugehörigkeit — Kompatibilität mit anderen Scoreboard-Plugins ist kein MVP-Ziel.
+
 ## Konfiguration
 
 `plugins/IlluniumCustom/config.yml` (wird beim ersten Start angelegt, Änderungen gelten nach Neustart):
@@ -65,8 +82,11 @@ Admin-Recovery (`illuniumcustom.admin`, jede Änderung wird mit Absender geloggt
 modules:             # <modul>: true|false, fehlende Module sind aktiv
   recipes: true
   groups: true
+  marriage: true
 storage:
   filename: data.db  # SQLite-Datei im Pluginordner
+marriage:
+  offline-symbol: "💔"  # Tablist-Zeichen bei offline Partner; falls der Vanilla-Font es nicht darstellt z. B. "✕❤"
 ```
 
 Ungültige Werte oder unbekannte Module verhindern den Start mit einer präzisen Fehlermeldung im Log.
@@ -78,6 +98,7 @@ Ungültige Werte oder unbekannte Module verhindern den Start mit einer präzisen
 | `/illuniumcustom status` (`/ic status`) | Version, Schema-Version, aktive Module | `illuniumcustom.admin` |
 | `/ic group ...` | Gruppen-Recovery, siehe oben | `illuniumcustom.admin` |
 | `/group ...` | Gruppen, siehe oben | `illuniumcustom.use` |
+| `/marry ...` · `/divorce ...` | Marriage, siehe oben | `illuniumcustom.use` |
 
 ## Backup
 

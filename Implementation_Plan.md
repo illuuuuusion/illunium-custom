@@ -1,7 +1,7 @@
 # IlluniumCustom — Implementation Plan v1.0
 
 > **Stand:** 20.10.2026  
-> **Status:** Phase 0–3 umgesetzt (siehe [`docs/development.md`](./docs/development.md)); ab Phase 4 offen  
+> **Status:** Phase 0–4 umgesetzt (siehe [`docs/development.md`](./docs/development.md)); ab Phase 5 offen  
 > **Repository:** https://github.com/illuuuuusion/illunium-custom  
 > **Produktvertrag:** [`MVP.md`](./MVP.md) — bei Abweichungen ist dieser MVP für das Spielverhalten maßgeblich.  
 > **Zielruntime:** Minecraft/Paper **26.3**, Java **25**; gepinnt: Paper-Build **207** (STABLE), `paper-api 26.3.build.207-stable`.
@@ -365,12 +365,12 @@ Die Phasen sind in dieser Reihenfolge empfohlen. **Jede Phase hat einen klaren, 
 
 **Exit-Gate:**
 
-- [ ] Tag über dem Kopf, Tag plus Herz in Tablist; **keine doppelten Prefixes**.
-- [ ] Alle Zuschauer sehen den Marriage-Status jedes verheirateten Spielers.
-- [ ] Partner-Join/Quit zeigt zeitnah `❤`/sichtbare Offline-Alternative.
-- [ ] Einfache Gruppen-/Marriage-Änderungen verursachen nicht unnötig breite Scoreboard-Rebuilds.
-- [ ] Ein Spieler kann nie mehr als einen Ehepartner haben, auch bei gleichzeitigen Requests.
-- [ ] Plugin-Disable/Restart hinterlässt keine veralteten Nametags oder Team-Artefakte.
+- [ ] Tag über dem Kopf, Tag plus Herz in Tablist; **keine doppelten Prefixes**. *(Implementiert; Sichtprüfung im Client-E2E Phase 8.)*
+- [ ] Alle Zuschauer sehen den Marriage-Status jedes verheirateten Spielers. *(Implementiert; Sichtprüfung im Client-E2E Phase 8.)*
+- [ ] Partner-Join/Quit zeigt zeitnah `❤`/sichtbare Offline-Alternative. *(Implementiert; Sichtprüfung im Client-E2E Phase 8.)*
+- [x] Einfache Gruppen-/Marriage-Änderungen verursachen nicht unnötig breite Scoreboard-Rebuilds.
+- [x] Ein Spieler kann nie mehr als einen Ehepartner haben, auch bei gleichzeitigen Requests.
+- [x] Plugin-Disable/Restart hinterlässt keine veralteten Nametags oder Team-Artefakte.
 
 **Review-/Commit-Schnitt:** `feat: add marriage and unified player appearance`.
 

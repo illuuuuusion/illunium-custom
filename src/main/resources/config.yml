@@ -4,7 +4,12 @@
 modules:
   recipes: true
   groups: true
+  marriage: true
 
 storage:
   # SQLite file inside the plugin folder.
   filename: data.db
+
+marriage:
+  # Tablist symbol when the partner is offline. If the vanilla font does not render it, use e.g. "✕❤".
+  offline-symbol: "💔"
