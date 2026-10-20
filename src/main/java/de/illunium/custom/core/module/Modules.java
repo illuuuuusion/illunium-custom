@@ -2,6 +2,7 @@ package de.illunium.custom.core.module;
 
 import de.illunium.custom.groups.GroupsModule;
 import de.illunium.custom.marriage.MarriageModule;
+import de.illunium.custom.playtime.PlaytimeModule;
 import de.illunium.custom.recipes.RecipesModule;
 import java.util.List;
 
@@ -15,7 +16,8 @@ public final class Modules {
         return List.of(
                 new RecipesModule(),
                 new GroupsModule(),
-                new MarriageModule()
+                new MarriageModule(),
+                new PlaytimeModule()
         );
     }
 }

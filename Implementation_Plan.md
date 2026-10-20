@@ -1,7 +1,7 @@
 # IlluniumCustom — Implementation Plan v1.0
 
 > **Stand:** 20.10.2026  
-> **Status:** Phase 0–4 umgesetzt (siehe [`docs/development.md`](./docs/development.md)); ab Phase 5 offen  
+> **Status:** Phase 0–5 umgesetzt (siehe [`docs/development.md`](./docs/development.md)); ab Phase 6 offen  
 > **Repository:** https://github.com/illuuuuusion/illunium-custom  
 > **Produktvertrag:** [`MVP.md`](./MVP.md) — bei Abweichungen ist dieser MVP für das Spielverhalten maßgeblich.  
 > **Zielruntime:** Minecraft/Paper **26.3**, Java **25**; gepinnt: Paper-Build **207** (STABLE), `paper-api 26.3.build.207-stable`.
@@ -386,10 +386,10 @@ Die Phasen sind in dieser Reihenfolge empfohlen. **Jede Phase hat einen klaren, 
 
 **Exit-Gate:**
 
-- [ ] Livezeit steigt korrekt; kein mehrfaches Zählen bei parallelem Checkpoint/Quit.
-- [ ] Offline-Spieler abrufbar, unbekannte Namen mit verständlicher Fehlermeldung.
-- [ ] Restart und geordneter Shutdown erhalten Zeit.
-- [ ] Kein synchroner DB-Query pro `/playtime` auf dem Main Thread.
+- [x] Livezeit steigt korrekt; kein mehrfaches Zählen bei parallelem Checkpoint/Quit.
+- [x] Offline-Spieler abrufbar, unbekannte Namen mit verständlicher Fehlermeldung.
+- [x] Restart und geordneter Shutdown erhalten Zeit. *(Unit + Shutdown-Flush; Session mit echtem Client in Phase 8.)*
+- [x] Kein synchroner DB-Query pro `/playtime` auf dem Main Thread.
 
 **Review-/Commit-Schnitt:** `feat: add persistent playtime queries`.
 

@@ -5,6 +5,7 @@ modules:
   recipes: true
   groups: true
   marriage: true
+  playtime: true
 
 storage:
   # SQLite file inside the plugin folder.

@@ -68,6 +68,15 @@ Admin-Recovery (`illuniumcustom.admin`, jede Änderung wird mit Absender geloggt
 
 Höchstens eine Ehe pro UUID, keine Selbstheirat; Ehen überstehen Quit, Namenswechsel und Neustart, Anträge nicht.
 
+### Playtime (`playtime`)
+
+| Command | Effekt |
+| --- | --- |
+| `/playtime` | Eigene Spielzeit |
+| `/playtime <player>` | Spielzeit eines bekannten Spielers, auch offline (letzter bekannter Name; Konsole nur mit Name) |
+
+Gezählt wird ab der ersten Aktivierung des Plugins, sekundengenau, Ausgabe als `1d 2h 3m`; die laufende Session ist sofort enthalten. Gespeichert wird beim Quit, alle 60 Sekunden und beim geordneten Shutdown. Bei einem Absturz fehlt höchstens die Zeit seit dem letzten Checkpoint (≤ 60 s pro Spieler); doppelt gezählt wird nichts. Kein Leaderboard, keine AFK-Erkennung.
+
 ### Anzeige (Nametag/Tablist)
 
 - Über dem Kopf: `[TAG] Name` (Tag in Gruppenfarbe), Tablist: `[TAG] Name ❤`.
@@ -83,6 +92,7 @@ modules:             # <modul>: true|false, fehlende Module sind aktiv
   recipes: true
   groups: true
   marriage: true
+  playtime: true
 storage:
   filename: data.db  # SQLite-Datei im Pluginordner
 marriage:
@@ -99,6 +109,7 @@ Ungültige Werte oder unbekannte Module verhindern den Start mit einer präzisen
 | `/ic group ...` | Gruppen-Recovery, siehe oben | `illuniumcustom.admin` |
 | `/group ...` | Gruppen, siehe oben | `illuniumcustom.use` |
 | `/marry ...` · `/divorce ...` | Marriage, siehe oben | `illuniumcustom.use` |
+| `/playtime [player]` | Spielzeit, siehe oben | `illuniumcustom.use` |
 
 ## Backup
 

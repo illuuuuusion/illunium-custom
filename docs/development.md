@@ -63,3 +63,10 @@ java -jar paper.jar --nogui
 - `MarriageServiceTest` gegen echtes SQLite: Antrag/Annahme/Ablehnung, Selbstheirat, bereits verheiratet, ein Antrag pro Empfänger (kein stilles Überschreiben), Ablauf nach 300 s, gleichzeitige Annahmen zweier Anträge (genau eine Ehe), einseitige Scheidung mit 30-s-Bestätigung und Abbruch, Ehe übersteht Neustart. `GroupServiceTest` prüft, dass Rename/Promote keine Anzeige-Updates auslösen und Tag/Farbe nur die Mitglieder dieser Gruppe neu melden.
 - Testserver: simulierter Absturz (`save-all flush`, `kill -9`) mit gespeichertem Team `illuniumcustom_stale` und fremdem Team `foreign` → nach Neustart nur noch `foreign`. Gespeicherte Ehe wird geladen (`/marry info Steve` → verheiratet, Partner offline), unbekannte Namen und Konsole erhalten klare Fehler.
 - **Offen für Client-E2E (Phase 8):** Sichtprüfung im Vanilla-Client, dass Tag über dem Kopf und in der Tablist genau einmal erscheint, Herz für alle Zuschauer und bei Partner-Join/Quit wechselt, und ob `💔` im Vanilla-Font gerendert wird (sonst `marriage.offline-symbol: "✕❤"`).
+
+## Verifikation Phase 5 (20.10.2026, Paper 26.3 Build 207)
+
+- `PlaytimeTest`: Livezeit aus monotoner Uhr (`System.nanoTime`), Sub-Sekunden-Rest bleibt über Checkpoints erhalten, doppeltes Join-Event startet die Session nicht neu, Checkpoint + Quit + erneuter Checkpoint zählen jede Sekunde genau einmal, gespeicherte Zeit übersteht Neustart, Formatierung `d/h/m`.
+- Gespeichert werden Deltas (`total_seconds = total_seconds + Δ`); der Abschnitt wird auf dem Main Thread abgegrenzt, bevor der Schreibauftrag in die geordnete DB-Queue geht. `/playtime` liest asynchron und addiert die zum Aufrufzeitpunkt noch ungespeicherten Sekunden; da alle vorherigen Checkpoints vor dem Lesen in der Queue stehen, fehlt oder doppelt sich nichts.
+- Testserver: gespeicherte Zeit offline abrufbar (`/playtime steve` → `1d 2h 3m`, case-insensitiv), unbekannter Name und Konsole ohne Argument mit klarer Meldung; Enable/Disable ohne Plugin-Fehler.
+- **Offen für Client-E2E (Phase 8):** laufende Session mit echtem Spieler über Checkpoint, Quit und Neustart.
