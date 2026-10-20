@@ -6,11 +6,9 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
-import net.kyori.adventure.text.format.NamedTextColor;
 
 /** SQL for {@code groups}/{@code group_memberships}. Runs inside {@code Database#transaction} only. */
 final class GroupRepository {
@@ -95,10 +93,6 @@ final class GroupRepository {
         update(c, "DELETE FROM groups WHERE id = ?", id);
     }
 
-    static String colorKey(NamedTextColor color) {
-        return NamedTextColor.NAMES.keyOrThrow(color).toUpperCase(Locale.ROOT);
-    }
-
     private static Map<Long, Group> query(Connection c, String sql, Object... params) throws SQLException {
         record Row(String name, String tag, String color, UUID leader, Map<UUID, GroupRole> members) {
         }
@@ -122,7 +116,7 @@ final class GroupRepository {
         }
         Map<Long, Group> groups = new HashMap<>();
         rows.forEach((id, row) -> groups.put(id, new Group(id, row.name(), row.tag(),
-                NamedTextColor.NAMES.valueOr(row.color().toLowerCase(Locale.ROOT), NamedTextColor.WHITE),
+                GroupColors.read(row.color()),
                 row.leader(), Map.copyOf(row.members()))));
         return groups;
     }

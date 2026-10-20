@@ -63,7 +63,7 @@ final class GroupAdminCommand implements BasicCommand {
     }
 
     private void inspect(CommandSender sender, Group g) {
-        sender.sendMessage(info("#" + g.id() + " " + g.name() + " [" + g.tag() + "] colour " + GroupRepository.colorKey(g.color())
+        sender.sendMessage(info("#" + g.id() + " " + g.name() + " [" + g.tag() + "] colour " + GroupColors.name(g.color())
                 + " | leader " + name(g.leader()) + " (" + g.leader() + ")"));
         g.members().forEach((uuid, role) -> sender.sendMessage(info("  " + role + " " + name(uuid) + " (" + uuid + ")")));
         long leaders = g.members().values().stream().filter(r -> r == GroupRole.LEADER).count();

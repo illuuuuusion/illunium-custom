@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import org.bukkit.GameMode;
+import org.bukkit.Input;
 import org.bukkit.Location;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Server;
@@ -27,6 +28,7 @@ import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityDismountEvent;
 import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.player.PlayerChangedWorldEvent;
+import org.bukkit.event.player.PlayerInputEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.player.PlayerTeleportEvent;
@@ -38,12 +40,16 @@ import org.bukkit.plugin.java.JavaPlugin;
 /**
  * {@code /sit} and {@code /unsit} (MVP §7). A player sits on an invisible marker armor stand that is tagged as ours
  * and never saved with the chunk. A player is SITTING exactly while they have an entry in {@link #seats}; every way out
- * goes through {@link #standUp}, which removes the seat. Seats left behind by a crash (e.g. restored as a player's
- * vehicle) are removed on start, on entity load and on join. Main thread only.
+ * goes through {@link #standUp}, which removes the seat. A newly pressed movement key stands up too. Seats left behind
+ * by a crash (e.g. restored as a player's vehicle) are removed on start, on entity load and on join. Main thread only.
  */
 public final class SitModule implements FeatureModule, Listener {
 
-    private record Seat(ArmorStand stand, Location standingSpot) {
+    /** Input changes this many ticks after sitting down are mount noise, not a key press. */
+    static final int MOUNT_GRACE_TICKS = 5;
+
+    /** @param input the last known key state, to stand up only on a newly pressed key */
+    private record Seat(ArmorStand stand, Location standingSpot, int sinceTick, Input input) {
     }
 
     private final Map<UUID, Seat> seats = new HashMap<>();
@@ -119,12 +125,21 @@ public final class SitModule implements FeatureModule, Listener {
             player.sendMessage(error("You can't sit here."));
             return;
         }
-        seats.put(player.getUniqueId(), new Seat(stand, spot));
+        seats.put(player.getUniqueId(), new Seat(stand, spot, server.getCurrentTick(), player.getCurrentInput()));
+    }
+
+    /** Whether {@code now} presses a movement, jump, sneak or sprint key that was not pressed {@code before}. */
+    static boolean pressedMoveKey(Input before, Input now) {
+        return now.isForward() && !before.isForward() || now.isBackward() && !before.isBackward()
+                || now.isLeft() && !before.isLeft() || now.isRight() && !before.isRight()
+                || now.isJump() && !before.isJump() || now.isSneak() && !before.isSneak()
+                || now.isSprint() && !before.isSprint();
     }
 
     /**
      * Ends the session and removes the seat. With {@code restore} the player is put back on the spot they sat down on
-     * (next tick, after vanilla has placed the dismounted player next to the seat). Returns whether they were sitting.
+     * (next tick, after vanilla has placed the dismounted player next to the seat); never on a key press, where that
+     * teleport would undo the first step. Returns whether they were sitting.
      */
     private boolean standUp(UUID uuid, boolean restore) {
         Seat seat = seats.remove(uuid);
@@ -158,6 +173,21 @@ public final class SitModule implements FeatureModule, Listener {
         Seat seat = seats.get(event.getEntity().getUniqueId());
         if (seat != null && seat.stand().equals(event.getDismounted())) {
             standUp(event.getEntity().getUniqueId(), true);
+        }
+    }
+
+    /** A sneak press may also dismount via vanilla; whichever of the two comes second finds no seat and does nothing. */
+    @EventHandler(priority = EventPriority.MONITOR)
+    public void onInput(PlayerInputEvent event) {
+        UUID uuid = event.getPlayer().getUniqueId();
+        Seat seat = seats.get(uuid);
+        if (seat == null) {
+            return;
+        }
+        if (server.getCurrentTick() - seat.sinceTick() >= MOUNT_GRACE_TICKS && pressedMoveKey(seat.input(), event.getInput())) {
+            standUp(uuid, false);
+        } else {
+            seats.put(uuid, new Seat(seat.stand(), seat.standingSpot(), seat.sinceTick(), event.getInput()));
         }
     }
 

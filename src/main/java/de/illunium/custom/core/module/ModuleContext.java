@@ -1,6 +1,7 @@
 package de.illunium.custom.core.module;
 
 import de.illunium.custom.appearance.AppearanceService;
+import de.illunium.custom.core.VisibilityService;
 import de.illunium.custom.core.command.AdminCommand;
 import de.illunium.custom.core.command.Chat;
 import de.illunium.custom.core.command.UserException;
@@ -20,6 +21,7 @@ import org.bukkit.plugin.java.JavaPlugin;
  *
  * @param settings   the module's own config section (empty if absent); validate it in {@code enable}
  * @param appearance report nametag/tablist data here instead of touching scoreboards or list names
+ * @param visibility whether a player may be shown as online to others; check it before revealing presence
  * @param admin      register {@code /ic <name>} subcommands here
  * @param mainThread runs tasks on the primary server thread; silently drops them once the plugin is disabled.
  *                   Use it to continue {@link Database#transaction} results with Bukkit API calls.
@@ -30,6 +32,7 @@ public record ModuleContext(
         Database database,
         PlayerIdentityService identities,
         AppearanceService appearance,
+        VisibilityService visibility,
         AdminCommand admin,
         Executor mainThread
 ) {

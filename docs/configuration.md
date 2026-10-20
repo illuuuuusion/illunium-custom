@@ -10,6 +10,8 @@ modules:                      # <modul>: true|false; fehlende Module sind aktiv
   playtime: true
   whitelistguard: true
   sit: true
+  vanish: true
+  spawn: true
 
 storage:
   filename: data.db           # SQLite-Datei im Pluginordner, nur einfacher Dateiname

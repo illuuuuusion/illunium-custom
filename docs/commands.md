@@ -19,7 +19,7 @@ Shapeless-Rezept `1 × Quartz-Block → 4 × Nether Quartz` (Key `illuniumcustom
 
 ## Groups (`groups`)
 
-Soziale Gruppen mit Name (1–16 Zeichen), Tag (1–5 Zeichen, jeweils `A-Z a-z 0-9 _ -`, case-insensitiv eindeutig) und Farbe (eine der 16 Minecraft-Farben, Standard `white`). Pro Spieler höchstens eine Gruppe, genau ein Leader, beliebig viele Mods.
+Soziale Gruppen mit Name (1–16 Zeichen), Tag (1–5 Zeichen, jeweils `A-Z a-z 0-9 _ -`, case-insensitiv eindeutig) und Farbe (eine der 16 Minecraft-Farben oder `#RRGGBB`, Standard `white`). Pro Spieler höchstens eine Gruppe, genau ein Leader, beliebig viele Mods.
 
 | Command | Effekt | Rolle |
 | --- | --- | --- |
@@ -30,12 +30,14 @@ Soziale Gruppen mit Name (1–16 Zeichen), Tag (1–5 Zeichen, jeweils `A-Z a-z 
 | `/group accept <group>` · `/group deny <group>` | Einladung annehmen/ablehnen | Eingeladener |
 | `/group kick <player>` | Member entfernen (Leader auch Mods) | Leader, Mod |
 | `/group promote <player>` · `/group demote <player>` | Member ↔ Mod | Leader |
-| `/group rename <name>` · `/group tag <tag>` · `/group color <color>` | Darstellung ändern | Leader |
+| `/group rename <name>` · `/group tag <tag>` · `/group color <color\|#RRGGBB>` | Darstellung ändern | Leader |
 | `/group transfer <player>` · `/group disband` | Leader übertragen (alter Leader wird Mod) / auflösen, jeweils mit Bestätigung | Leader |
 | `/group confirm` · `/group cancel` | Bestätigung (30 Sekunden gültig) / Abbruch | Leader |
 | `/group leave` | Gruppe verlassen; Leader müssen vorher übertragen oder auflösen | Mod, Member |
 
 Kick/Promote/Demote/Transfer funktionieren auch für offline Mitglieder (letzter bekannter Name). Einladungen und offene Bestätigungen sind flüchtig und verfallen beim Neustart. Bei `accept` wird erneut geprüft: Frist, Gruppe existiert noch, Einladender ist noch Leader/Mod, Spieler ist noch gruppenlos.
+
+Farben: Name case-insensitiv (`red`, `Light_Purple`) oder genau sechsstelliges Hex **mit** `#` (`#ff8800`); `FF8800`, `#FFF`, `#FFFFFFFF`, `#GG0000`, Format-Codes und MiniMessage werden abgelehnt. Gespeichert wird `NAME` bzw. `#RRGGBB` in Großbuchstaben; ein Hex-Wert, der genau einer Standardfarbe entspricht (`#FF5555`), wird als diese Farbe gespeichert. Tab-Completion schlägt die 16 Namen vor.
 
 Admin-Recovery: siehe oben (`/ic group ...`).
 
@@ -49,6 +51,8 @@ Admin-Recovery: siehe oben (`/ic group ...`).
 | `/divorce` · `/divorce confirm` · `/divorce cancel` | Einseitige Scheidung mit Bestätigung (30 Sekunden) |
 
 Höchstens eine Ehe pro UUID, keine Selbstheirat; Ehen überstehen Quit, Namenswechsel und Neustart, Anträge nicht.
+
+**Herzpartikel:** Sneaken beide Ehepartner in derselben Welt mit höchstens 3,0 Blöcken Abstand (`distanceSquared <= 9`), erscheinen etwa einmal pro Sekunde wenige `HEART`-Partikel zwischen und über ihnen, sichtbar für alle Umstehenden; ein Ereignis pro Paar. Keine Partikel, wenn nur einer sneakt, bei größerem Abstand, anderer Welt, offline oder verborgenem (vanished) Partner.
 
 ## Playtime (`playtime`)
 
@@ -77,10 +81,42 @@ Betriebsbasis und Launch-Ablauf: [`operations.md`](./operations.md).
 | `/sit` | Hinsetzen; erneut `/sit` steht wieder auf |
 | `/unsit` | Aufstehen |
 
-Nur auf festem Untergrund (Block, Stufe, Treppe, Teppich, …), nicht beim Fliegen/Gleiten, Schwimmen, in Wasser/Lava, beim Reiten, im Bett, im Fall oder als Zuschauer. Aufstehen per Sneaken, `/unsit` oder `/sit`; der Sitz endet außerdem bei Schaden, Tod, Teleport, Weltwechsel, Quit und Plugin-Stop. Nach dem Aufstehen steht der Spieler wieder an der Stelle, an der er sich gesetzt hat.
+Nur auf festem Untergrund (Block, Stufe, Treppe, Teppich, …), nicht beim Fliegen/Gleiten, Schwimmen, in Wasser/Lava, beim Reiten, im Bett, im Fall oder als Zuschauer. Aufstehen per `/unsit` oder `/sit` (der Spieler steht danach wieder an der Stelle, an der er sich gesetzt hat) oder per **neu gedrückter** Taste W/A/S/D, Leertaste, Sneak oder Sprint: dann sofort freie Steuerung ohne Rücksetzen, damit der erste Schritt nicht zurückspringt. Mausbewegung allein und Tasten, die schon beim Hinsetzen gehalten wurden, beenden das Sitzen nicht; Eingaben in den ersten 5 Ticks nach dem Hinsetzen werden ignoriert. Der Sitz endet außerdem bei Schaden, Tod, Teleport, Weltwechsel, Quit und Plugin-Stop.
+
+## Vanish (`vanish`)
+
+| Command | Effekt |
+| --- | --- |
+| `/vanish` | Für andere Spieler verbergen; war man sichtbar, sehen alle einmal gelb `Name left the game` |
+| `/unvanish` | Wieder sichtbar (Tablist, Entity), **ohne** Join-Nachricht |
+
+- Nur **Vanilla-Operatoren** (`isOp()`, bei jeder Ausführung geprüft, nur im Spiel). Keine Bukkit-Permission, Gruppenrolle oder `illuniumcustom.admin` reicht; für Nicht-OPs ist der Command nicht sichtbar. Wiederholte Aufrufe sind idempotent (keine doppelte Nachricht).
+- Jeder OP joint **verborgen**: keine Join-Nachricht, kein Tablist-Eintrag, keine Entity für andere Spieler (`hidePlayer` pro Zuschauer, auch für später joinende). Der Zustand ist flüchtig: nach `/unvanish` gilt er bis `/vanish` oder Quit, beim nächsten Login wieder verborgen.
+- Verborgene OPs: keine Quit-, Todes- und Advancement-Nachricht; nicht in Serverlisten-Spielerzahl/-Probe, nicht in Completions von `/marry`, `/group invite`, `/playtime`; `/marry`/`/group invite` an sie meldet „nicht online“; Partner sehen das Offline-Herz, `/marry info` zeigt „offline“, keine Herzpartikel.
+- Verliert ein verborgener Spieler OP, wird er innerhalb einer Sekunde sichtbar. Beim Plugin-Stop werden alle wieder sichtbar.
+- Kein Spectator-, God- oder NoClip-Modus. Konsole und Log sehen weiter alles.
+- **Grenzen:** Chat, Blockänderungen, Geräusche und direkte Interaktion verraten Anwesenheit. `/playtime <OP>` wächst weiterhin (Checkpoint alle 60 s). Das Gruppen-Team auf dem Haupt-Scoreboard enthält den Namen auch im Paket an andere Clients (nicht sichtbar, nur per Protokollanalyse). Vanilla-`/list` und Vanilla-Namensvorschläge filtern laut CraftBukkit nach `canSee`; Abnahme mit echten Clients steht aus.
+
+## Spawn (`spawn`)
+
+| Command | Effekt |
+| --- | --- |
+| `/spawn` | Sofortiger Teleport zum Welt-Spawn (`illuniumcustom.use`, nur Spieler) |
+
+Ziel ist der Welt-Spawn, den Vanilla `/setworldspawn` setzt (`Server#getRespawnWorld`, Standard: Overworld), bei jedem Aufruf neu gelesen — nie Bett/Anker. Kein eigener Spawn, kein `/setspawn`, kein Cooldown. Ist der Spawn-Block nicht frei (fester Boden, zwei freie Blöcke ohne Flüssigkeit/Feuer), wird die Oberkante derselben Spalte versucht, sonst abgebrochen. Der Spawn-Chunk wird asynchron geladen. Abgebrochene Teleports (Event-Cancel) werden gemeldet; Sitzende werden vorher vom Sit-Modul abgesetzt.
+
+## Difficulty (Vanilla, kein Modul)
+
+Es gibt **keinen** Plugin-Command; Vanilla `/difficulty <peaceful|easy|normal|hard>` persistiert bereits (Gate P6, siehe [`development.md`](./development.md)). Der Wert steht in den Weltdaten, `difficulty=` in `server.properties` gilt nur für neu erzeugte Welten und überschreibt beim Start nicht. Auf Paper wirkt `/difficulty` **nur auf die Welt, in der der Befehl ausgeführt wird** (Konsole: Overworld). Für alle Dimensionen:
+
+```text
+difficulty hard
+execute in minecraft:the_nether run difficulty hard
+execute in minecraft:the_end run difficulty hard
+```
 
 ## Anzeige (Nametag/Tablist)
 
-- Über dem Kopf: `[TAG] Name` (Tag in Gruppenfarbe), Tablist: `[TAG] Name ❤`.
-- Herz nur in der Tablist, für alle Zuschauer: rotes `❤` wenn der Partner online ist, sonst graues `💔` (`marriage.offline-symbol`).
+- Über dem Kopf: `[TAG] Name` (Tag in Gruppenfarbe, auch Hex), Tablist: `[TAG] Name ❤`.
+- Herz nur in der Tablist, für alle Zuschauer: rotes `❤` wenn der Partner online und nicht verborgen ist, sonst graues `💔` (`marriage.offline-symbol`).
 - Kompatibilität mit anderen Plugins, die Scoreboard-Teams oder Tablist-Namen setzen, ist kein MVP-Ziel (Details: [`architecture.md`](./architecture.md)).

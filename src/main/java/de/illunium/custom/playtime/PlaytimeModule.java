@@ -124,7 +124,8 @@ public final class PlaytimeModule implements FeatureModule, Listener, BasicComma
 
     @Override
     public Collection<String> suggest(CommandSourceStack source, String[] args) {
-        return args.length <= 1 ? Chat.complete(args, server.getOnlinePlayers().stream().map(Player::getName)) : List.of();
+        return args.length <= 1 ? Chat.complete(args, server.getOnlinePlayers().stream()
+                .filter(p -> context.visibility().isPubliclyVisible(p.getUniqueId())).map(Player::getName)) : List.of();
     }
 
     @Override

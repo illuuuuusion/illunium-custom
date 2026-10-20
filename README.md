@@ -1,6 +1,6 @@
 # IlluniumCustom
 
-Eigenständiges Paper-Plugin für die Illunium Forever-World: Quartz-Rezept, Gruppen, Marriage, Playtime, Whitelist-Schutz und Sitzen in **einer** JAR, ohne weitere Plugins. Produktvertrag: [`MVP.md`](./MVP.md), Umsetzung: [`Implementation_Plan.md`](./Implementation_Plan.md), Änderungen: [`CHANGELOG.md`](./CHANGELOG.md).
+Eigenständiges Paper-Plugin für die Illunium Forever-World: Quartz-Rezept, Gruppen, Marriage, Playtime, Whitelist-Schutz, Sitzen, Vanish für OPs und `/spawn` in **einer** JAR, ohne weitere Plugins. Produktvertrag: [`MVP.md`](./MVP.md), Umsetzung: [`Implementation_Plan.md`](./Implementation_Plan.md), Patch v1.1: [`Patch_v1.1_Implementation_Plan.md`](./Patch_v1.1_Implementation_Plan.md), Änderungen: [`CHANGELOG.md`](./CHANGELOG.md).
 
 ## Voraussetzungen
 
@@ -39,10 +39,12 @@ Deployment, Launch, Backup/Restore und Rollback: [`docs/operations.md`](./docs/o
 
 | Command | Effekt | Permission |
 | --- | --- | --- |
-| `/group create\|list\|info\|members\|invite\|uninvite\|accept\|deny\|kick\|promote\|demote\|rename\|tag\|color\|transfer\|disband\|confirm\|cancel\|leave` | Gruppen mit Tag, Farbe und Rollen Leader/Mod/Member | `illuniumcustom.use` |
-| `/marry <player>\|accept\|deny\|info [player]` · `/divorce [confirm\|cancel]` | Partnerschaft, Herz in der Tablist | `illuniumcustom.use` |
+| `/group create\|list\|info\|members\|invite\|uninvite\|accept\|deny\|kick\|promote\|demote\|rename\|tag\|color\|transfer\|disband\|confirm\|cancel\|leave` | Gruppen mit Tag, Farbe (Name oder `#RRGGBB`) und Rollen Leader/Mod/Member | `illuniumcustom.use` |
+| `/marry <player>\|accept\|deny\|info [player]` · `/divorce [confirm\|cancel]` | Partnerschaft, Herz in der Tablist, Herzpartikel beim gemeinsamen Sneaken | `illuniumcustom.use` |
 | `/playtime [player]` | Spielzeit, auch offline | `illuniumcustom.use` |
-| `/sit` · `/unsit` | Hinsetzen/Aufstehen | `illuniumcustom.use` |
+| `/sit` · `/unsit` | Hinsetzen/Aufstehen (auch per Bewegungstaste) | `illuniumcustom.use` |
+| `/spawn` | Teleport zum Welt-Spawn | `illuniumcustom.use` |
+| `/vanish` · `/unvanish` | OPs verbergen/zeigen; OPs joinen immer verborgen | nur Vanilla-OP |
 | `/ic status` · `/ic group inspect\|setleader\|disband ...` | Diagnose, Gruppen-Recovery | `illuniumcustom.admin` |
 | Vanilla `/whitelist add\|remove\|list\|reload` | Zugang (native Whitelist, nicht vom Plugin) | Vanilla/OP |
 

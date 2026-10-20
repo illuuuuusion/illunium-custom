@@ -1,6 +1,7 @@
 package de.illunium.custom;
 
 import de.illunium.custom.appearance.AppearanceService;
+import de.illunium.custom.core.VisibilityService;
 import de.illunium.custom.core.command.AdminCommand;
 import de.illunium.custom.core.config.PluginConfig;
 import de.illunium.custom.core.identity.PlayerIdentityService;
@@ -52,6 +53,7 @@ public final class IlluniumCustomPlugin extends JavaPlugin {
             identities.remember(player.getUniqueId(), player.getName());
         }
         appearance = AppearanceService.start(this);
+        VisibilityService visibility = new VisibilityService(getServer());
 
         Executor mainThread = task -> {
             if (!isEnabled()) {
@@ -78,6 +80,7 @@ public final class IlluniumCustomPlugin extends JavaPlugin {
                     database,
                     identities,
                     appearance,
+                    visibility,
                     admin,
                     mainThread
             ));

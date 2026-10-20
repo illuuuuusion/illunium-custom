@@ -5,6 +5,7 @@ import static de.illunium.custom.core.command.Chat.error;
 import static de.illunium.custom.core.command.Chat.info;
 import static de.illunium.custom.core.command.Chat.ok;
 
+import de.illunium.custom.core.VisibilityService;
 import de.illunium.custom.core.command.Chat;
 import de.illunium.custom.core.command.UserException;
 import de.illunium.custom.core.module.FeatureModule;
@@ -20,6 +21,8 @@ import java.util.stream.Stream;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.event.ClickEvent;
 import net.kyori.adventure.text.format.NamedTextColor;
+import org.bukkit.Location;
+import org.bukkit.Particle;
 import org.bukkit.Server;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
@@ -27,13 +30,19 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
+import org.bukkit.scheduler.BukkitTask;
 
-/** {@code /marry} and {@code /divorce}; reports the tablist heart to the appearance service (MVP §5). */
+/**
+ * {@code /marry} and {@code /divorce}; reports the tablist heart to the appearance service (MVP §5) and shows heart
+ * particles between sneaking partners (Patch v1.1). A hidden (vanished) partner counts as offline everywhere.
+ */
 public final class MarriageModule implements FeatureModule, Listener {
 
     private ModuleContext context;
     private Server server;
+    private VisibilityService visibility;
     private MarriageService marriages;
+    private BukkitTask hearts;
     private Component onlineHeart;
     private Component offlineHeart;
 
@@ -46,6 +55,7 @@ public final class MarriageModule implements FeatureModule, Listener {
     public void enable(ModuleContext context) {
         this.context = context;
         this.server = context.plugin().getServer();
+        this.visibility = context.visibility();
         String offlineSymbol = context.settings().getString("offline-symbol", "💔");
         if (offlineSymbol.isBlank()) {
             throw new IllegalArgumentException("marriage.offline-symbol must not be empty");
@@ -55,8 +65,11 @@ public final class MarriageModule implements FeatureModule, Listener {
 
         // Loading reports every married player once, which decorates players already online.
         marriages = MarriageService.load(context.database(), context.mainThread(), InstantSource.system(),
-                (player, partner) -> context.appearance().setSuffix(player, partner == null ? null : heart(server.getPlayer(partner) != null)));
+                (player, partner) -> context.appearance().setSuffix(player, partner == null ? null : heart(visibility.publiclyOnline(partner))));
+        visibility.onChange(player -> marriages.partner(player)
+                .ifPresent(partner -> context.appearance().setSuffix(partner, heart(visibility.publiclyOnline(player)))));
         server.getPluginManager().registerEvents(this, context.plugin());
+        hearts = server.getScheduler().runTaskTimer(context.plugin(), this::showHearts, 20, 20);
         context.plugin().registerCommand("marry", "Propose, accept or check a marriage", List.of(), new MarryCommand());
         context.plugin().registerCommand("divorce", "End your marriage", List.of(), new DivorceCommand());
     }
@@ -64,6 +77,34 @@ public final class MarriageModule implements FeatureModule, Listener {
     @Override
     public void disable() {
         // Marriages are committed per command; proposals and divorce confirmations are dropped on purpose.
+        if (hearts != null) {
+            hearts.cancel();
+        }
+    }
+
+    /** Once per second and pair: hearts between partners who both sneak, visibly, at most 3 blocks apart. */
+    private void showHearts() {
+        for (Player player : server.getOnlinePlayers()) {
+            UUID uuid = player.getUniqueId();
+            UUID partnerId = marriages.partner(uuid).orElse(null);
+            // Each pair is handled from its smaller UUID only.
+            if (partnerId == null || uuid.compareTo(partnerId) > 0 || !player.isSneaking()) {
+                continue;
+            }
+            Player partner = server.getPlayer(partnerId);
+            if (partner == null || !partner.isSneaking() || !visibility.isPubliclyVisible(uuid) || !visibility.isPubliclyVisible(partnerId)) {
+                continue;
+            }
+            Location a = player.getLocation();
+            Location b = partner.getLocation();
+            if (closeEnough(a, b)) {
+                a.getWorld().spawnParticle(Particle.HEART, a.add(b).multiply(0.5).add(0, 2, 0), 3, 0.4, 0.2, 0.4, 0);
+            }
+        }
+    }
+
+    static boolean closeEnough(Location a, Location b) {
+        return a.getWorld().equals(b.getWorld()) && a.distanceSquared(b) <= 9.0;
     }
 
     private Component heart(boolean partnerOnline) {
@@ -74,8 +115,8 @@ public final class MarriageModule implements FeatureModule, Listener {
     public void onJoin(PlayerJoinEvent event) {
         UUID uuid = event.getPlayer().getUniqueId();
         marriages.partner(uuid).ifPresent(partner -> {
-            context.appearance().setSuffix(uuid, heart(server.getPlayer(partner) != null));
-            context.appearance().setSuffix(partner, heart(true));
+            context.appearance().setSuffix(uuid, heart(visibility.publiclyOnline(partner)));
+            context.appearance().setSuffix(partner, heart(visibility.isPubliclyVisible(uuid)));
         });
     }
 
@@ -121,7 +162,7 @@ public final class MarriageModule implements FeatureModule, Listener {
                     default -> {
                         Player player = player(sender);
                         Player target = server.getPlayerExact(first);
-                        if (target == null) {
+                        if (target == null || !visibility.isPubliclyVisible(target.getUniqueId())) {
                             throw new UserException("That player is not online.");
                         }
                         marriages.propose(player.getUniqueId(), target.getUniqueId());
@@ -152,7 +193,7 @@ public final class MarriageModule implements FeatureModule, Listener {
             }
             sender.sendMessage(marriages.partner(target)
                     .map(partner -> info(name(target) + " is married to " + name(partner)
-                            + (server.getPlayer(partner) != null ? " (online)." : " (offline).")))
+                            + (visibility.publiclyOnline(partner) ? " (online)." : " (offline).")))
                     .orElseGet(() -> info(name(target) + " is not married.")));
         }
 
@@ -160,10 +201,10 @@ public final class MarriageModule implements FeatureModule, Listener {
         public Collection<String> suggest(CommandSourceStack source, String[] args) {
             if (args.length <= 1) {
                 return Chat.complete(args, Stream.concat(Stream.of("accept", "deny", "info"),
-                        server.getOnlinePlayers().stream().filter(p -> p != source.getSender()).map(Player::getName)));
+                        visibleNames().filter(name -> !name.equals(source.getSender().getName()))));
             }
             return args.length == 2 && args[0].equalsIgnoreCase("info")
-                    ? Chat.complete(args, server.getOnlinePlayers().stream().map(Player::getName))
+                    ? Chat.complete(args, visibleNames())
                     : List.of();
         }
 
@@ -208,6 +249,10 @@ public final class MarriageModule implements FeatureModule, Listener {
         public String permission() {
             return "illuniumcustom.use";
         }
+    }
+
+    private Stream<String> visibleNames() {
+        return server.getOnlinePlayers().stream().filter(p -> visibility.isPubliclyVisible(p.getUniqueId())).map(Player::getName);
     }
 
     private static Player player(CommandSender sender) {

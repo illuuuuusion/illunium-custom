@@ -1,5 +1,16 @@
 # Changelog
 
+## Unreleased — Patch v1.1
+
+Additiv zu 0.1.0-rc.1, Schema unverändert (v1), keine neuen Abhängigkeiten. Plan: `Patch_v1.1_Implementation_Plan.md`.
+
+- Groups: `/group color` akzeptiert zusätzlich `#RRGGBB`; bestehende Farbnamen bleiben gültig.
+- Sit: neu gedrückte W/A/S/D-, Sprung-, Sneak- oder Sprint-Taste steht sofort auf, ohne Rücksetzen auf den Sitzpunkt.
+- Marriage: Herzpartikel, wenn beide Partner sneaken (gleiche Welt, ≤ 3 Blöcke); verborgene Partner gelten als offline.
+- Vanish (neu, `modules.vanish`): Vanilla-OPs joinen verborgen, `/unvanish` · `/vanish`; Core-`VisibilityService` für andere Module.
+- Spawn (neu, `modules.spawn`): `/spawn` zum Welt-Spawn aus `/setworldspawn`, mit Standplatzprüfung.
+- Difficulty: kein Modul; Vanilla `/difficulty` persistiert nachweislich (pro Welt), dokumentiert.
+
 ## 0.1.0-rc.1 — 21.10.2026
 
 Erster Release Candidate des MVP für Paper 26.3 (Build 207), Java 25. Schema v1.

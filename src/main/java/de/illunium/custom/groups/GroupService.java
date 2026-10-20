@@ -11,16 +11,13 @@ import java.time.InstantSource;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
-import java.util.TreeSet;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.function.BiConsumer;
 import java.util.regex.Pattern;
-import net.kyori.adventure.text.format.NamedTextColor;
 
 /**
  * Group rules. Every mutation re-reads the committed state and checks {@link GroupPolicy} inside its transaction,
@@ -217,7 +214,7 @@ public final class GroupService {
     }
 
     public CompletableFuture<Group> recolor(UUID actor, String colorName) {
-        return leaderEdit(actor, Action.COLOR, c -> GroupRepository.colorKey(parseColor(colorName)), "color");
+        return leaderEdit(actor, Action.COLOR, c -> GroupColors.serialize(GroupColors.parse(colorName)), "color");
     }
 
     /** Stores a pending transfer for {@link #confirm}; nothing changes yet. */
@@ -293,14 +290,6 @@ public final class GroupService {
     /** Fresh committed state for diagnostics. */
     public CompletableFuture<Optional<Group>> inspect(long groupId) {
         return database.transaction(c -> GroupRepository.load(c, groupId));
-    }
-
-    public static NamedTextColor parseColor(String name) {
-        NamedTextColor color = NamedTextColor.NAMES.value(name.toLowerCase(Locale.ROOT));
-        if (color == null) {
-            throw new UserException("Unknown colour. Use one of: " + String.join(", ", new TreeSet<>(NamedTextColor.NAMES.keys())));
-        }
-        return color;
     }
 
     // --- internals ---

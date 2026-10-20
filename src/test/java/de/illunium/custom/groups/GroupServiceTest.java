@@ -20,6 +20,7 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.format.TextColor;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -194,6 +195,10 @@ class GroupServiceTest {
         Group recolored = main.await(groups.recolor(LEADER, "DARK_RED"));
         assertEquals(NamedTextColor.DARK_RED, recolored.color());
         assertEquals(3, shown.size());
+        assertTrue(main.fails(groups.recolor(LEADER, "#GG0000")).startsWith("Unknown colour"));
+        assertEquals(NamedTextColor.DARK_RED, groups.groupOf(LEADER).orElseThrow().color(), "rejected colour changes nothing");
+        assertEquals(TextColor.color(0xFF8800), main.await(groups.recolor(LEADER, "#fF8800")).color());
+        assertEquals(TextColor.color(0xFF8800), reload().groupOf(MEMBER).orElseThrow().color(), "hex survives restart");
         assertEquals("NV", main.await(groups.retag(LEADER, "NV")).tag());
         assertEquals("NV", shown.get(MEMBER).orElseThrow().tag());
     }

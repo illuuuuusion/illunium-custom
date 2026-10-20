@@ -77,7 +77,7 @@ final class GroupCommand implements BasicCommand {
             case "members" -> members(player, own(player));
             case "invite" -> {
                 Player target = server.getPlayerExact(arg(args, 1, "/group invite <player>"));
-                if (target == null) {
+                if (target == null || !context.visibility().isPubliclyVisible(target.getUniqueId())) {
                     throw new UserException("That player is not online.");
                 }
                 reply(player, groups.invite(actor, target.getUniqueId()), g -> {
@@ -126,7 +126,7 @@ final class GroupCommand implements BasicCommand {
                     g -> ok("Group renamed to " + g.name() + "."));
             case "tag" -> reply(player, groups.retag(actor, arg(args, 1, "/group tag <tag>")),
                     g -> ok("Tag changed to [" + g.tag() + "]."));
-            case "color" -> reply(player, groups.recolor(actor, arg(args, 1, "/group color <color>")),
+            case "color" -> reply(player, groups.recolor(actor, arg(args, 1, "/group color <color|#RRGGBB>")),
                     g -> ok("Colour changed.").append(Component.text(" [" + g.tag() + "]", g.color())));
             case "transfer" -> {
                 UUID target = member(player, args, "/group transfer <player>");
@@ -175,7 +175,7 @@ final class GroupCommand implements BasicCommand {
 
     private void showInfo(CommandSender sender, Group g) {
         sender.sendMessage(g.prefix().append(Component.text(g.name(), NamedTextColor.WHITE)));
-        sender.sendMessage(info("Colour: " + NamedTextColor.NAMES.key(g.color()) + " | Leader: " + name(g.leader())
+        sender.sendMessage(info("Colour: " + GroupColors.name(g.color()) + " | Leader: " + name(g.leader())
                 + " | Members: " + g.members().size()));
     }
 
@@ -250,7 +250,8 @@ final class GroupCommand implements BasicCommand {
         Stream<String> candidates = switch (args[0].toLowerCase(Locale.ROOT)) {
             case "info" -> groups.all().stream().map(Group::name);
             case "invite" -> server.getOnlinePlayers().stream()
-                    .filter(p -> !p.getUniqueId().equals(self) && groups.groupOf(p.getUniqueId()).isEmpty())
+                    .filter(p -> !p.getUniqueId().equals(self) && groups.groupOf(p.getUniqueId()).isEmpty()
+                            && context.visibility().isPubliclyVisible(p.getUniqueId()))
                     .map(Player::getName);
             case "uninvite" -> own == null ? Stream.empty() : groups.invitees(own.id()).stream().map(this::name);
             case "accept", "deny" -> self == null ? Stream.empty() : groups.invitesFor(self).stream().map(Group::name);
