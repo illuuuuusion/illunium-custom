@@ -15,6 +15,7 @@ repositories {
 
 dependencies {
     compileOnly("io.papermc.paper:paper-api:26.3.build.207-stable")
+    implementation("org.xerial:sqlite-jdbc:3.53.4.0")
 
     testImplementation("io.papermc.paper:paper-api:26.3.build.207-stable")
     testImplementation("org.junit.jupiter:junit-jupiter:5.14.4")
@@ -41,8 +42,13 @@ tasks.processResources {
 
 tasks.test {
     useJUnitPlatform()
+    jvmArgs("--enable-native-access=ALL-UNNAMED")
 }
 
 tasks.jar {
     archiveBaseName = "IlluniumCustom"
+    // Bundle sqlite-jdbc unrelocated: relocation would break its JNI bindings.
+    from(configurations.runtimeClasspath.map { classpath -> classpath.map { zipTree(it) } })
+    exclude("META-INF/MANIFEST.MF", "META-INF/*.SF", "META-INF/*.DSA", "META-INF/*.RSA", "META-INF/versions/*/module-info.class", "module-info.class")
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
 }

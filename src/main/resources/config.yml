@@ -1,0 +1,8 @@
+# IlluniumCustom configuration. Changes apply on server restart; no secrets belong here.
+
+# Feature modules (true/false). A module missing here is enabled.
+modules: {}
+
+storage:
+  # SQLite file inside the plugin folder.
+  filename: data.db
