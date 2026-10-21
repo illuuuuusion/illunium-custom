@@ -8,7 +8,7 @@ Gilt für Testserver und Forever-World. **Produktions-Rollouts sind ein separate
 | --- | --- |
 | Paper | 26.3 Build 207 (`26.3-207-main@bc68acd`, API `26.3.build.207-stable`) |
 | Java | 25 (getestet: Temurin 25.0.4.1) |
-| SQLite-Schema | v1 (`V1__initial_schema.sql`) |
+| SQLite-Schema | v2 ab Patch v1.2 (`V1__initial_schema.sql`, `V2__spawn_cooldowns.sql`); 0.1.0-rc.1 und v1.1 kennen nur v1 |
 | Config | Vorlage aus dieser Version, ohne Versionsfeld; neue Schlüssel haben Standardwerte |
 | JAR | `IlluniumCustom-0.1.0-rc.1.jar`, SHA-256 aus `SHA256SUMS`/`IlluniumCustom.jar.sha256` des CI-Builds; lokal reproduzierbar |
 
@@ -44,12 +44,13 @@ Was nach einem Restore fehlt: alle Änderungen nach dem Backup-Zeitpunkt (Gruppe
 
 - **Nur JAR**, wenn die Ziel-JAR dasselbe Schema kennt (siehe Tabelle oben / `/ic status`).
 - Kennt die alte JAR ein neueres Schema in `data.db` nicht, bricht sie den Start mit `Database schema vN is newer than supported vM` ab und deaktiviert sich, ohne Daten anzufassen. Dann: alte JAR **plus** DB-Backup aus der Zeit vor dem Update zurückspielen.
-- Vor jedem schemaändernden Update ist ein DB-Backup Pflicht.
+- Vor jedem schemaändernden Update ist ein DB-Backup Pflicht. Patch v1.2 hebt das Schema auf v2: Rollback auf eine v1.1-JAR braucht das Backup von vorher (dabei gehen nur seither gesetzte Spawn-Cooldowns verloren); die DB nie von Hand auf v1 zurücksetzen.
 
 ## Absturz
 
 - Playtime: es fehlt höchstens die Zeit seit dem letzten Checkpoint (≤ 60 s pro Spieler), nichts wird doppelt gezählt.
 - Gruppen und Ehen: jede bestätigte Änderung ist committet; halbe Änderungen gibt es nicht.
+- Spawn: laufende Warmups enden ohne Teleport und ohne Cooldown. Ein Cooldown, dessen Commit beim Absturz noch ausstand, kann fehlen (Best Effort).
 - Nametag-Teams und Sitz-Entities aus der abgestürzten Sitzung werden beim nächsten Start bzw. beim Laden der Chunks/beim Join entfernt.
 
 ## Whitelist und Launch
@@ -71,4 +72,5 @@ Mit mindestens drei Testaccounts (A, B, C), keinem weiteren Plugin, A als OP, B 
 - [ ] Marriage: A heiratet B → beide sehen bei beiden rotes `❤`; B quit → A zeigt für alle das Offline-Symbol (prüfen, ob `💔` gerendert wird, sonst `offline-symbol: "✕❤"`); Rejoin → `❤`; Scheidung entfernt beide Herzen; Gruppen-Tag bleibt unverändert.
 - [ ] Playtime: Session über einen Checkpoint (> 60 s), Quit, Neustart → Zeit erhalten, nicht doppelt; `/playtime B` offline.
 - [ ] Sit: `/sit` auf Block, Stufe, Treppe; sichtbar sitzend; `/sit` erneut und Sneaken stehen auf; zwei Spieler gleichzeitig; abgelehnt im Wasser, beim Fliegen (Kreativ), im Fall, auf dem Pferd; Schaden/Teleport/Weltwechsel/Quit/Neustart beenden das Sitzen ohne übrig gebliebene ArmorStands (`/execute if entity @e[type=armor_stand]`).
+- [ ] Spawn (Patch v1.2, B und C): `/spawn` 10 s still → Teleport frühestens nach 10 s, danach Ablehnung mit ~60 min; Abbruch ohne Cooldown bei Laufen, Springen, Wegschieben, Fallschaden, Lava, Zombie-Treffer; **kein** Abbruch bei Kopfdrehen, Sneaken auf der Stelle, Zombie in der Nähe ohne Treffer; B schlägt C bzw. trifft per Bogen → beide 30 s gesperrt, neuer Treffer nach 20 s erneuert; Quit im Combat-Tag + Rejoin → keine Strafe, Tag weg; Neustart nach Teleport → Cooldown bleibt; `/setworldspawn` geändert → neues Ziel; `/spawn` sitzend → keine ArmorStands übrig; A im Vanish → bleibt verborgen. Bewegungstoleranz (0,001 Block) dabei bestätigen oder in `SpawnService.MOVE_TOLERANCE_SQUARED` anpassen.
 - [ ] Kombination: Gruppenänderung + Heirat + Join/Quit + Playtime + `/sit` gleichzeitig, danach Neustart; Log ohne `ERROR`/`SEVERE`.

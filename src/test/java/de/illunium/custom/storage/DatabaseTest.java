@@ -32,11 +32,11 @@ class DatabaseTest {
     void migrationIsIdempotent() throws Exception {
         Path file = dir.resolve("data.db");
         try (Database db = Database.open(file)) {
-            assertEquals(1, db.schemaVersion());
+            assertEquals(Database.MIGRATIONS.size(), db.schemaVersion());
         }
         try (Database db = Database.open(file)) {
-            assertEquals(1, db.schemaVersion());
-            assertEquals(1L, count(db, "SELECT COUNT(*) FROM schema_migrations"));
+            assertEquals(Database.MIGRATIONS.size(), db.schemaVersion());
+            assertEquals((long) Database.MIGRATIONS.size(), count(db, "SELECT COUNT(*) FROM schema_migrations"));
             assertEquals(0L, count(db, "SELECT COUNT(*) FROM groups"));
         }
     }

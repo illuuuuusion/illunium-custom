@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased — Patch v1.2
+
+Schema **v2** (neue additive Migration `V2__spawn_cooldowns.sql`), keine neuen Abhängigkeiten. Plan: `Patch_v1.2_Implementation_Plan.md`. Ersetzt nur die v1.1-Spawn-Regeln.
+
+- Spawn: `/spawn` teleportiert erst nach **10 s** Warmup; Positionsänderung, wirksamer Schaden, fremder Teleport, Weltwechsel, Tod oder Quit brechen ohne Cooldown ab.
+- Spawn: **60 min** Cooldown pro Spieler, erst nach erfolgreichem Teleport; in SQLite gespeichert, übersteht Neustarts.
+- Spawn: PvP-Treffer (Nahkampf oder per Paper zugeordnetes Projektil) sperren `/spawn` für Angreifer und Opfer **30 s**; jeder Treffer erneuert. Flüchtig, kein Combat-Log-Schutz, keine Monster-Nähe-Prüfung.
+
 ## Unreleased — Patch v1.1
 
 Additiv zu 0.1.0-rc.1, Schema unverändert (v1), keine neuen Abhängigkeiten. Plan: `Patch_v1.1_Implementation_Plan.md`.

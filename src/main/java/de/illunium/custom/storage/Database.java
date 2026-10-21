@@ -24,7 +24,7 @@ import java.util.concurrent.TimeUnit;
 public final class Database implements AutoCloseable {
 
     /** Migration scripts in order; version = index + 1. Append only, never edit a shipped script. */
-    static final List<String> MIGRATIONS = List.of("V1__initial_schema.sql");
+    static final List<String> MIGRATIONS = List.of("V1__initial_schema.sql", "V2__spawn_cooldowns.sql");
 
     private final Connection connection;
     private final ExecutorService executor;

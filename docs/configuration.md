@@ -33,6 +33,8 @@ whitelistguard:
 | `whitelistguard.check-interval-seconds` | `30` | 5–3600; Prüfung ohne Netzwerkzugriff |
 | `whitelistguard.staff` | `[]` | Liste von `{uuid, name}`. `uuid` mit Bindestrichen, Version 4 (Mojang-Account, keine Offline-UUID), keine Duplikate; `name` 1–16 Zeichen `A-Z a-z 0-9 _`. |
 
+`spawn` hat keine eigenen Schlüssel: Warmup 10 s, Cooldown 60 min und Combat-Tag 30 s sind feste Produktwerte aus Patch v1.2; Cooldowns liegen pro UUID in `data.db`, nicht in der Config.
+
 ## Staff-Einträge
 
 - UUID und aktuellen Namen z. B. aus der `whitelist.json` übernehmen, nachdem der Account per `/whitelist add <Name>` eingetragen wurde, oder aus `usercache.json` nach einem Join.

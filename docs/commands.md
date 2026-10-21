@@ -101,9 +101,26 @@ Nur auf festem Untergrund (Block, Stufe, Treppe, Teppich, …), nicht beim Flieg
 
 | Command | Effekt |
 | --- | --- |
-| `/spawn` | Sofortiger Teleport zum Welt-Spawn (`illuniumcustom.use`, nur Spieler) |
+| `/spawn` | Teleport zum Welt-Spawn nach 10 Sekunden Warmup (`illuniumcustom.use`, nur Spieler) |
 
-Ziel ist der Welt-Spawn, den Vanilla `/setworldspawn` setzt (`Server#getRespawnWorld`, Standard: Overworld), bei jedem Aufruf neu gelesen — nie Bett/Anker. Kein eigener Spawn, kein `/setspawn`, kein Cooldown. Ist der Spawn-Block nicht frei (fester Boden, zwei freie Blöcke ohne Flüssigkeit/Feuer), wird die Oberkante derselben Spalte versucht, sonst abgebrochen. Der Spawn-Chunk wird asynchron geladen. Abgebrochene Teleports (Event-Cancel) werden gemeldet; Sitzende werden vorher vom Sit-Modul abgesetzt.
+Ziel ist der Welt-Spawn, den Vanilla `/setworldspawn` setzt (`Server#getRespawnWorld`, Standard: Overworld), bei jedem Aufruf neu gelesen — nie Bett/Anker. Kein eigener Spawn, kein `/setspawn`. Ist der Spawn-Block nicht frei (fester Boden, zwei freie Blöcke ohne Flüssigkeit/Feuer), wird die Oberkante derselben Spalte versucht, sonst abgelehnt (beim Start und erneut beim Teleport). Der Spawn-Chunk wird asynchron geladen. Sitzende werden beim Teleport vom Sit-Modul abgesetzt; Vanish bleibt unverändert.
+
+Regeln (Patch v1.2, feste Werte, OPs ohne Ausnahme):
+
+- **Warmup 10 s:** Startmeldung, danach Restzeit in der Actionbar. Teleport frühestens nach 10 s (monotone Uhr; Server-Lag verlängert, verkürzt nie). Erneutes `/spawn` zeigt die Restzeit, startet nichts neu.
+- **Abbruch ohne Cooldown** bei Positionsänderung > 0,001 Block (X/Y/Z; Kopfdrehen und Sneaken auf der Stelle zählen nicht), wirksamem Schaden jeder Art (Endschaden > 0, z. B. kein Abbruch bei vollständig geblocktem Schildtreffer), PvP-Beteiligung, fremdem Teleport, Weltwechsel, Tod, Quit und Plugin-Stop. Abbruch hat Vorrang, auch während der Spawn-Chunk für den Teleport lädt.
+- **Combat-Tag 30 s:** Fügt ein Spieler einem anderen wirksamen Schaden zu (Nahkampf oder alles, was Paper per `DamageSource#getCausingEntity` einem Spieler zuordnet, z. B. Pfeile), werden **beide** getaggt; jeder weitere Treffer setzt 30 s ab jetzt. Solange verweigert `/spawn` den Start mit Restzeit. Monster-, Umwelt- und Selbstschaden taggen nie (brechen aber einen laufenden Warmup ab).
+- **Cooldown 60 min** pro UUID, beginnt erst nach erfolgreichem Teleport; Anzeige `in 42 min 18 s`. Gespeichert in `spawn_cooldowns` (SQLite), übersteht Stop/Start. Abgebrochene, blockierte oder per Event gecancelte Teleports kosten nichts.
+- **Bewusst nicht:** keine Monster-Nähe-Prüfung, keine Logout-Strafe, kein Combat-Body. Der Combat-Tag ist flüchtig und endet beim Quit; ein Relog umgeht ihn (akzeptierter Tradeoff, kein Anti-Combat-Log gewünscht).
+
+| Antwort | Bedeutung |
+| --- | --- |
+| `Teleporting to spawn in 10 seconds. Don't move!` | Warmup läuft |
+| `Teleport to spawn cancelled: you moved.` / `you took damage.` / `you are in combat.` / `you were teleported.` | Abbruch, kein Cooldown |
+| `You are in combat: /spawn is locked for 24 s.` | Combat-Tag aktiv |
+| `/spawn is available again in 42 min 18 s.` | Cooldown aktiv |
+| `Teleported to spawn.` → `Next /spawn in 60 minutes.` | Erfolg; zweite Zeile erst nach dem DB-Commit |
+| `Your cooldown could not be saved; /spawn stays locked anyway.` | DB-Fehler (Log `SEVERE`), Sperre bleibt im Speicher |
 
 ## Difficulty (Vanilla, kein Modul)
 
