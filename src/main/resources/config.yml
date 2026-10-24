@@ -7,9 +7,11 @@ modules:
   marriage: true
   playtime: true
   whitelistguard: true
+  whiteliststaging: true
   sit: true
   vanish: true
   spawn: true
+  leaderboard: true
 
 storage:
   # SQLite file inside the plugin folder.
@@ -26,3 +28,12 @@ whitelistguard:
   # it is verified against Mojang once per start and only then re-added to the native whitelist if missing.
   # Example: - {uuid: "069a79f4-44e9-4726-a5be-fca90e38aaf5", name: "Notch"}
   staff: []
+
+vanish:
+  auto-vanish-default: true
+  # Minecraft account UUID: boolean. Overrides affect the next join after a server restart.
+  auto-vanish-overrides: {}
+
+leaderboard:
+  # 30..3600 seconds after completing a snapshot. Always 10 rows, all OPs excluded.
+  cache-seconds: 60

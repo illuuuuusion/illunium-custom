@@ -44,7 +44,14 @@ public record ModuleContext(
     public <T> void reply(CompletableFuture<T> result, CommandSender sender, Consumer<T> onSuccess) {
         result.whenCompleteAsync((value, error) -> {
             if (error == null) {
-                onSuccess.accept(value);
+                try {
+                    onSuccess.accept(value);
+                } catch (UserException e) {
+                    sender.sendMessage(Chat.error(e.getMessage()));
+                } catch (RuntimeException e) {
+                    plugin.getLogger().log(Level.SEVERE, "Command response of " + sender.getName() + " failed", e);
+                    sender.sendMessage(Chat.error("Internal error. Please tell an admin."));
+                }
                 return;
             }
             Throwable cause = error instanceof CompletionException && error.getCause() != null ? error.getCause() : error;
@@ -52,7 +59,7 @@ public record ModuleContext(
                 sender.sendMessage(Chat.error(cause.getMessage()));
             } else {
                 plugin.getLogger().log(Level.SEVERE, "Command of " + sender.getName() + " failed", cause);
-                sender.sendMessage(Chat.error("Internal error, nothing was changed. Please tell an admin."));
+                sender.sendMessage(Chat.error("Internal error; check the current status. Please tell an admin."));
             }
         }, mainThread);
     }

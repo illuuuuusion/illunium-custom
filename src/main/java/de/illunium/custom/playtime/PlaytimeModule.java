@@ -31,7 +31,7 @@ import org.bukkit.event.player.PlayerQuitEvent;
  * Playtime since the plugin was first enabled (MVP §4). Sessions are flushed as deltas on quit, every
  * {@value #CHECKPOINT_SECONDS} seconds and on shutdown; a crash loses at most the time since the last checkpoint.
  */
-public final class PlaytimeModule implements FeatureModule, Listener, BasicCommand {
+public final class PlaytimeModule implements FeatureModule, Listener, BasicCommand, PlaytimeReadService {
 
     static final int CHECKPOINT_SECONDS = 60;
 
@@ -101,6 +101,23 @@ public final class PlaytimeModule implements FeatureModule, Listener, BasicComma
         } catch (UserException e) {
             sender.sendMessage(error(e.getMessage()));
         }
+    }
+
+    @Override
+    public boolean available() { return context != null; }
+
+    @Override
+    public java.util.concurrent.CompletableFuture<Map<UUID, Long>> snapshot() {
+        Map<UUID, Long> live = tracker.snapshot();
+        return context.database().transaction(c -> {
+            Map<UUID, Long> totals = new java.util.HashMap<>();
+            try (PreparedStatement s = c.prepareStatement("SELECT player_uuid, total_seconds FROM playtime");
+                 ResultSet rows = s.executeQuery()) {
+                while (rows.next()) totals.put(UUID.fromString(rows.getString(1)), rows.getLong(2));
+            }
+            live.forEach((id, seconds) -> totals.merge(id, seconds, Long::sum));
+            return Map.copyOf(totals);
+        });
     }
 
     private UUID resolve(String name) {

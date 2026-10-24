@@ -47,6 +47,8 @@ public final class PlayerIdentityService implements Listener {
         return new PlayerIdentityService(database, logger, names);
     }
 
+    public Map<UUID, String> knownPlayers() { return Map.copyOf(names); }
+
     public Optional<String> name(UUID uuid) {
         return Optional.ofNullable(names.get(uuid));
     }

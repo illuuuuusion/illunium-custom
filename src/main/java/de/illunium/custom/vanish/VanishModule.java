@@ -31,8 +31,8 @@ import org.bukkit.scheduler.BukkitTask;
 /**
  * Vanilla operators join hidden: no join message, no tablist entry and no entity for any other player, until
  * {@code /unvanish}; {@code /vanish} hides them again with a vanilla-style leave message. Only {@link Player#isOp()}
- * counts, checked on every use. The state lives in {@link VisibilityService} and is volatile on purpose, so every
- * login starts hidden. Hiding is per viewer via {@code hidePlayer}; names and tags stay with the appearance service.
+ * counts, checked on every use. The state lives in {@link VisibilityService} and is volatile on purpose, so each
+ * login follows the configured UUID join default. Hiding is per viewer via {@code hidePlayer}; names and tags stay with the appearance service.
  * Main thread only.
  */
 public final class VanishModule implements FeatureModule, Listener {
@@ -41,6 +41,7 @@ public final class VanishModule implements FeatureModule, Listener {
     private Server server;
     private VisibilityService visibility;
     private BukkitTask opCheck;
+    private AutoVanishPolicy policy;
 
     @Override
     public String id() {
@@ -49,11 +50,12 @@ public final class VanishModule implements FeatureModule, Listener {
 
     @Override
     public void enable(ModuleContext context) {
+        policy = AutoVanishPolicy.load(context.settings());
         plugin = context.plugin();
         server = plugin.getServer();
         visibility = context.visibility();
         // Without hot reload this only happens after a failed start; an operator already online counts as just joined.
-        server.getOnlinePlayers().stream().filter(Player::isOp).forEach(this::hide);
+        server.getOnlinePlayers().stream().filter(p -> policy.hidden(p.isOp(), p.getUniqueId())).forEach(this::hide);
         server.getPluginManager().registerEvents(this, plugin);
         plugin.registerCommand("vanish", "Hide yourself from other players", List.of(), new VanishCommand(true));
         plugin.registerCommand("unvanish", "Show yourself to other players", List.of(), new VanishCommand(false));
@@ -119,7 +121,7 @@ public final class VanishModule implements FeatureModule, Listener {
                 player.hidePlayer(plugin, admin);
             }
         }
-        if (player.isOp()) {
+        if (policy.hidden(player.isOp(), player.getUniqueId())) {
             hide(player);
             event.joinMessage(null);
         }

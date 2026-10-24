@@ -102,6 +102,7 @@ public final class SpawnModule implements FeatureModule, Listener {
             spawns.cancel(uuid);
             return;
         }
+        UUID session = UUID.randomUUID();
         Location spawn = server.getRespawnWorld().getSpawnLocation();
         // Movement or damage while the chunk loads still cancels: the warmup is only closed by beginTeleport.
         spawn.getWorld().getChunkAtAsync(spawn).thenAccept(chunk -> {
@@ -115,6 +116,7 @@ public final class SpawnModule implements FeatureModule, Listener {
                 player.sendMessage(error(target == null ? "The spawn is blocked right now. Please tell an admin." : "Teleport was cancelled."));
                 return;
             }
+            server.getPluginManager().callEvent(new SpawnTeleportSucceeded(uuid, session));
             player.sendMessage(ok("Teleported to spawn."));
             persist(Map.of(uuid, until)).whenCompleteAsync((stored, e) -> player.sendMessage(e == null
                     ? info("Next /spawn in " + SpawnService.COOLDOWN.toMinutes() + " minutes.")

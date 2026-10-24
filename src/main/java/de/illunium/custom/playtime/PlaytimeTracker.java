@@ -48,6 +48,12 @@ final class PlaytimeTracker {
         return seconds;
     }
 
+    Map<UUID, Long> snapshot() {
+        Map<UUID, Long> result = new HashMap<>();
+        unflushedSince.keySet().forEach(id -> result.put(id, unflushed(id)));
+        return Map.copyOf(result);
+    }
+
     /** Non-zero flushes of all sessions. */
     Map<UUID, Long> flushAll() {
         Map<UUID, Long> deltas = new HashMap<>();

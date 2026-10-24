@@ -55,6 +55,19 @@ class PlaytimeTest {
     }
 
     @Test
+    void bulkLiveSnapshotUsesExactlyTheSameUnflushedSecondsAsCommands() throws Exception {
+        try (Database db = Database.open(dir.resolve("bulk.db"))) {
+            tracker.start(A); tracker.start(B); advance(70_500);
+            write(db, tracker.flushAll()); advance(1_000);
+            Map<UUID, Long> live = tracker.snapshot();
+            assertEquals(Map.of(A, tracker.unflushed(A), B, tracker.unflushed(B)), live);
+            assertEquals(71, total(db, A) + live.get(A));
+            write(db, tracker.flushAll());
+            assertEquals(71, total(db, A) + tracker.snapshot().get(A));
+        }
+    }
+
+    @Test
     void storedTimeSurvivesRestart() throws Exception {
         Path file = dir.resolve("data.db");
         try (Database db = Database.open(file)) {

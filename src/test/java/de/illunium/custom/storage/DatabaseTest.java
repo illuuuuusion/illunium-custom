@@ -42,6 +42,31 @@ class DatabaseTest {
     }
 
     @Test
+    void upgradeFromV2PreservesProfilesPlaytimeAndSpawnCooldowns() throws Exception {
+        Path file = dir.resolve("upgrade.db");
+        try (Connection c = DriverManager.getConnection("jdbc:sqlite:" + file); Statement statement = c.createStatement()) {
+            statement.executeUpdate("CREATE TABLE schema_migrations(version INTEGER PRIMARY KEY, applied_at INTEGER NOT NULL)");
+            for (int version = 1; version <= 2; version++) {
+                try (var input = getClass().getResourceAsStream("/db/migrations/" + Database.MIGRATIONS.get(version - 1))) {
+                    statement.executeUpdate(new String(input.readAllBytes(), java.nio.charset.StandardCharsets.UTF_8));
+                }
+                statement.executeUpdate("INSERT INTO schema_migrations VALUES (" + version + ", 0)");
+            }
+            statement.executeUpdate("INSERT INTO player_profiles VALUES ('" + A + "', 'Steve', 0)");
+            statement.executeUpdate("INSERT INTO playtime VALUES ('" + A + "', 12345, 0)");
+            statement.executeUpdate("INSERT INTO spawn_cooldowns VALUES ('" + A + "', 9999999999999)");
+        }
+        try (Database db = Database.open(file)) {
+            assertEquals(Database.MIGRATIONS.size(), db.schemaVersion());
+            assertEquals(1L, count(db, "SELECT COUNT(*) FROM player_profiles"));
+            assertEquals(12345L, count(db, "SELECT total_seconds FROM playtime"));
+            assertEquals(9999999999999L, count(db, "SELECT available_at_epoch_ms FROM spawn_cooldowns"));
+            assertEquals(0L, count(db, "SELECT COUNT(*) FROM leaderboard_metrics"));
+            assertEquals(0L, count(db, "SELECT COUNT(*) FROM whitelist_stage_entries"));
+        }
+    }
+
+    @Test
     void newerSchemaFailsWithoutTouchingData() throws Exception {
         Path file = dir.resolve("data.db");
         Database.open(file).close();

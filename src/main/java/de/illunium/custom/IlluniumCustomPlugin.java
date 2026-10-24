@@ -73,6 +73,9 @@ public final class IlluniumCustomPlugin extends JavaPlugin {
                 getLogger().info("Module " + module.id() + " disabled by config");
                 continue;
             }
+            if (yaml.contains(module.id()) && !yaml.isConfigurationSection(module.id())) {
+                throw new IllegalArgumentException(module.id() + " must be a configuration section");
+            }
             startedModules.push(module);
             module.enable(new ModuleContext(
                     this,
