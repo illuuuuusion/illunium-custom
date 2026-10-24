@@ -1,5 +1,16 @@
 # Changelog
 
+## Unreleased — Patch v1.3
+
+Schema **v4**, additiv auf v2: `V3__leaderboards.sql`, `V4__whitelist_staging.sql`. Keine neuen Abhängigkeiten. Plan: `Patch_v1.3_Implementation_Plan.md`.
+
+- `/leaderboard` und `/lb`: elf Survival-Kategorien, zehn Einträge pro Seite, eigene Platzierung, Wettbewerbsränge bei Gleichstand und Offline-Historie. Aktuelle OP-UUIDs werden immer ausgeschlossen, unabhängig von Auto-Vanish.
+- Vanilla-Statistiken werden in kleinen Main-Thread-Schritten gelesen, reine Zahlen auf einem Worker sortiert; Playtime nutzt die bestehende Messung mit Bulk-Read und laufenden Sessions.
+- Eigene persistente Zähler für Platzierungen, echte Totem-Rettungen, erfolgreiche Spawn-Teleports (Session-ID dedupliziert) und das seit v1.3 beobachtete höchste XP-Level; DB-Fehler puffern und wiederholen.
+- `/ic whitelist stage|unstage|staged|preview|launch|status|retry`: asynchron verifizierte Java-Profile zunächst nur in SQLite. Expliziter Launch friert die Liste ein, nutzt die native Whitelist und bestätigt UUID plus nichtleeren Namen. Persistierte Claims und Recovery schützen vor Dopplungen; bereits angewendete Accounts werden nach manueller Entfernung nicht erneut freigegeben.
+- `vanish.auto-vanish-default` (weiterhin `true`) und strikte UUID/Boolean-Overrides erlauben sichtbare OP-Joins; manuelle Vanish-Commands bleiben erhalten.
+- Betriebsdokumentation enthält Launch-Checkliste, konsistente Sicherung inklusive `ops.json`, Rollback und offene Client-Abnahme. Kein produktiver Rollout.
+
 ## Unreleased — Patch v1.2
 
 Schema **v2** (neue additive Migration `V2__spawn_cooldowns.sql`), keine neuen Abhängigkeiten. Plan: `Patch_v1.2_Implementation_Plan.md`. Ersetzt nur die v1.1-Spawn-Regeln.

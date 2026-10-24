@@ -8,7 +8,7 @@ Gilt für Testserver und Forever-World. **Produktions-Rollouts sind ein separate
 | --- | --- |
 | Paper | 26.3 Build 207 (`26.3-207-main@bc68acd`, API `26.3.build.207-stable`) |
 | Java | 25 (getestet: Temurin 25.0.4.1) |
-| SQLite-Schema | v2 ab Patch v1.2 (`V1__initial_schema.sql`, `V2__spawn_cooldowns.sql`); 0.1.0-rc.1 und v1.1 kennen nur v1 |
+| SQLite-Schema | v4 ab Patch v1.3 (V3 Leaderboards, V4 Staging); v1.2 kennt v2, 0.1.0-rc.1/v1.1 nur v1 |
 | Config | Vorlage aus dieser Version, ohne Versionsfeld; neue Schlüssel haben Standardwerte |
 | JAR | `IlluniumCustom-0.1.0-rc.1.jar`, SHA-256 aus `SHA256SUMS`/`IlluniumCustom.jar.sha256` des CI-Builds; lokal reproduzierbar |
 
@@ -17,7 +17,7 @@ Gilt für Testserver und Forever-World. **Produktions-Rollouts sind ein separate
 1. CI grün, JAR + Hash + `build-info.txt` aus dem Build des freizugebenden Commits.
 2. Auf dem **separaten Testserver** installieren, Startup-Smoke (Log ohne `ERROR`/`SEVERE` des Plugins, `/ic status` zeigt alle Module) und Gameplay-Abnahme (unten).
 3. Review und dokumentierte Freigabe.
-4. Vor dem Rollout sichern: alte Plugin-JAR, `plugins/IlluniumCustom/` (online per `.backup`, s. u.) und `whitelist.json`.
+4. Vor dem Rollout sichern: alte Plugin-JAR, `plugins/IlluniumCustom/` (online per `.backup`, s. u.) und `whitelist.json`/`ops.json`.
 5. Server stoppen, JAR ersetzen, starten. Frisches Log prüfen, `/ic status`, kurze Spieltests.
 6. Bei FAIL: stoppen, Ursache dokumentieren, Rollback (s. u.), erneut prüfen.
 
@@ -25,7 +25,7 @@ Kein Hot-Reload: Plugin-Updates und Config-Änderungen immer per Server-Neustart
 
 ## Backup
 
-Zu sichern sind `plugins/IlluniumCustom/data.db`, `plugins/IlluniumCustom/config.yml` und `whitelist.json` (gehört zum Server-Backup, nicht zur Plugin-DB).
+Zu sichern sind `plugins/IlluniumCustom/data.db`, `plugins/IlluniumCustom/config.yml` sowie `whitelist.json` und `ops.json` (gehören zum Server-Backup, nicht zur Plugin-DB).
 
 - **Online** (Server läuft): `sqlite3 plugins/IlluniumCustom/data.db ".backup /pfad/backup.db"` — konsistenter Snapshot über die SQLite-Backup-API. Danach `sqlite3 /pfad/backup.db "PRAGMA integrity_check"` → `ok`.
 - **Offline** (Server gestoppt): `data.db` plus vorhandene `data.db-wal`/`data.db-shm` gemeinsam kopieren.
@@ -35,7 +35,7 @@ Zu sichern sind `plugins/IlluniumCustom/data.db`, `plugins/IlluniumCustom/config
 
 1. Server stoppen.
 2. `data.db` durch das Backup ersetzen, alte `data.db-wal`/`data.db-shm` löschen.
-3. Passende `config.yml` und ggf. `whitelist.json` zurückspielen.
+3. Passende `config.yml` und ggf. `whitelist.json`/`ops.json` zurückspielen.
 4. Starten, Log und `/ic status` prüfen.
 
 Was nach einem Restore fehlt: alle Änderungen nach dem Backup-Zeitpunkt (Gruppen, Ehen, Playtime). Einladungen, Anträge und Bestätigungen sind ohnehin flüchtig.
@@ -44,7 +44,7 @@ Was nach einem Restore fehlt: alle Änderungen nach dem Backup-Zeitpunkt (Gruppe
 
 - **Nur JAR**, wenn die Ziel-JAR dasselbe Schema kennt (siehe Tabelle oben / `/ic status`).
 - Kennt die alte JAR ein neueres Schema in `data.db` nicht, bricht sie den Start mit `Database schema vN is newer than supported vM` ab und deaktiviert sich, ohne Daten anzufassen. Dann: alte JAR **plus** DB-Backup aus der Zeit vor dem Update zurückspielen.
-- Vor jedem schemaändernden Update ist ein DB-Backup Pflicht. Patch v1.2 hebt das Schema auf v2: Rollback auf eine v1.1-JAR braucht das Backup von vorher (dabei gehen nur seither gesetzte Spawn-Cooldowns verloren); die DB nie von Hand auf v1 zurücksetzen.
+- Vor jedem schemaändernden Update ist ein DB-Backup Pflicht. Patch v1.2 hebt das Schema auf v2: Rollback auf eine v1.1-JAR braucht das Backup von vorher (dabei gehen nur seither gesetzte Spawn-Cooldowns verloren); die DB nie von Hand auf v1 zurücksetzen. v1.3 benötigt entsprechend das v2-Backup für ein Rollback auf v1.2; eigene neue Metriken und Staging-Vorgänge seit dem Backup gehen dabei verloren, native Launch-Freigaben nur bei Wiederherstellung der nativen Whitelist.
 
 ## Absturz
 
@@ -74,3 +74,27 @@ Mit mindestens drei Testaccounts (A, B, C), keinem weiteren Plugin, A als OP, B 
 - [ ] Sit: `/sit` auf Block, Stufe, Treppe; sichtbar sitzend; `/sit` erneut und Sneaken stehen auf; zwei Spieler gleichzeitig; abgelehnt im Wasser, beim Fliegen (Kreativ), im Fall, auf dem Pferd; Schaden/Teleport/Weltwechsel/Quit/Neustart beenden das Sitzen ohne übrig gebliebene ArmorStands (`/execute if entity @e[type=armor_stand]`).
 - [ ] Spawn (Patch v1.2, B und C): `/spawn` 10 s still → Teleport frühestens nach 10 s, danach Ablehnung mit ~60 min; Abbruch ohne Cooldown bei Laufen, Springen, Wegschieben, Fallschaden, Lava, Zombie-Treffer; **kein** Abbruch bei Kopfdrehen, Sneaken auf der Stelle, Zombie in der Nähe ohne Treffer; B schlägt C bzw. trifft per Bogen → beide 30 s gesperrt, neuer Treffer nach 20 s erneuert; Quit im Combat-Tag + Rejoin → keine Strafe, Tag weg; Neustart nach Teleport → Cooldown bleibt; `/setworldspawn` geändert → neues Ziel; `/spawn` sitzend → keine ArmorStands übrig; A im Vanish → bleibt verborgen. Bewegungstoleranz (0,001 Block) dabei bestätigen oder in `SpawnService.MOVE_TOLERANCE_SQUARED` anpassen.
 - [ ] Kombination: Gruppenänderung + Heirat + Join/Quit + Playtime + `/sit` gleichzeitig, danach Neustart; Log ohne `ERROR`/`SEVERE`.
+
+## Projektstart mit Whitelist-Staging (Patch v1.3)
+
+1. Vor Installation/Launch konsistent sichern: `whitelist.json`, `ops.json`, `plugins/IlluniumCustom/config.yml`, SQLite per Online-Backup (inkl. Integritätsprüfung) oder bei gestopptem Server DB samt WAL/SHM. Weltstatistiken ebenfalls ins Server-Backup aufnehmen. Vorherige JAR und passende DB-Version aufbewahren.
+2. Anmeldungen manuell aus Discord übernehmen: `/ic whitelist stage <MinecraftName>`. Erfolg muss ausdrücklich `STAGED` und **keine Zugangsfreigabe** melden. Fehlerhafte/unerreichbare Profile später erneut versuchen; keine Offline-UUIDs erfinden. Ein ausschließlich vorgemerkter Account muss am Testserver weiterhin den Whitelist-Kick erhalten.
+3. `/ic whitelist staged [seite]` und `preview` kontrollieren. Nativ bereits erlaubte Tester/Staff bleiben erlaubt. Vanilla `/whitelist add` gewährt sofort Zugang und ist kein Staging-Befehl.
+4. Nach fachlicher Freigabe einmal `/ic whitelist launch`. Währenddessen kein `unstage`; neu gestagete Accounts gehören erst zum nächsten Launch. Ein paralleler Launch wird abgewiesen. Whitelist und Enforcement bleiben eingeschaltet.
+5. `/ic whitelist status` bis DONE/PARTIAL prüfen, `staged` auf Einzelfehler kontrollieren. Native `/whitelist list` und eine **lesende** Kontrolle von `whitelist.json` müssen korrekte UUIDs und nichtleere Namen zeigen. Stichproben: frisch freigeschalteter Account kann joinen; nicht vorgemerkter Account bleibt gesperrt; Staff unverändert.
+6. Bei Teilfehlern `/ic whitelist retry`. Erneut Status und native Einträge prüfen. Bei unterbrochenem DB-Commit/gesperrtem Batch sauber neu starten: Recovery bestätigt schon vorhandene Freigaben, fehlende bleiben FAILED bis zum ausdrücklichen Retry. Keine Live-JSON-Edits als Reparatur.
+7. Nach APPLIED ist ausschließlich die native Whitelist zuständig: `/whitelist remove <Name>` bleibt wirksam, alte APPLIED-Einträge werden nicht wiederhergestellt. Nur konfigurierte geschützte Staff folgen weiterhin dem Guard. Staging kann anschließend deaktiviert werden, ohne Freigaben zu ändern.
+
+Die Audit-Tabelle und Serverlogs enthalten Akteur, UUID, verifizierten Namen, Aktion, Ergebnis und Zeitpunkt. Profilauflösung hat zwei Worker, eine Queue für höchstens 32 weitere Anfragen und 15 s Antwort-Timeout; der Launch verarbeitet sequenziell höchstens einen Account je Main-Thread-Fortsetzung. Bei Mojang-Ausfall bleiben Einträge offen/fehlerhaft. Status-Reads verändern keinen Zugang.
+
+## v1.3-Abnahme vor Produktionsfreigabe
+
+- [ ] Zwei normale Clients und zwei OPs: Default-OP joint ohne öffentliche Nachricht/Tablist/Entity, UUID-Opt-out sichtbar mit normaler Join-Nachricht. Beide können manuell vanischen, sichtbares `/vanish` erzeugt genau eine gelbe Leave-Meldung; Opt-out nach Quit wieder sichtbar. De-OP innerhalb einer Sekunde sichtbar.
+- [ ] Neuer Viewer sieht keine verborgenen OPs; Marriage-Herzen/Partikel, Ping, Completions und Gruppen-Ausgaben verraten keine versteckte Anwesenheit. Sichtbarer OP bleibt sichtbar, aber in allen elf Leaderboards ausgeschlossen.
+- [ ] Platzierungen einschließlich Bett/Tür, gecancelte Aktionen, Totem in beiden Händen/ohne Totem/gecancelt; XP-Aufstieg, Tod und XP-Ausgabe; Neustart mit gespeicherten Rekorden.
+- [ ] Erfolgreicher v1.2-Spawn zählt genau einmal, Warmup-/Combat-/Ziel-/Event-Abbruch nie. Bestehende v1.2-Client-Testmatrix weiterhin abnehmen.
+- [ ] Reale nie gejointe Accounts: STAGED ohne Zugang, Launch mit UUID + Name, Join nach APPLIED, Teilfehler/Retry, manueller nativer Remove und Restart ohne Reaktivierung. Nicht-OP mit `illuniumcustom.admin` darf weder Staging noch Launch bedienen.
+- [ ] Profil-Ausfall, DB-Ausfall, großer Offline-Bestand auf Zielhardware; Tickprofil dokumentieren. Cache zeigt bewusst keine garantierten Livewerte.
+- [ ] Konsistentes Backup und Rollback mit passender JAR/DB am Testserver, dokumentierte manuelle Produktionsfreigabe.
+
+Eigene Block-Deltas werden alle 5 s sowie bei Quit/Disable geschrieben; Totem/XP/Spawn stoßen zusätzlich einen Flush an. Bei DB-Fehlern bleiben Deltas im Speicher und werden erneut versucht; ein Prozessabsturz oder dauerhaft defekte DB beim Shutdown kann noch nicht bestätigte Deltas verlieren. Spawn-IDs werden dauerhaft zur Deduplizierung behalten; derzeit keine automatische Bereinigung. Keine historischen Werte schätzen.

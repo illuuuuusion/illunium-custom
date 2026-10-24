@@ -1,6 +1,6 @@
 # IlluniumCustom
 
-Eigenständiges Paper-Plugin für die Illunium Forever-World: Quartz-Rezept, Gruppen, Marriage, Playtime, Whitelist-Schutz, Sitzen, Vanish für OPs und `/spawn` in **einer** JAR, ohne weitere Plugins. Produktvertrag: [`MVP.md`](./MVP.md), Umsetzung: [`Implementation_Plan.md`](./Implementation_Plan.md), Patch v1.1: [`Patch_v1.1_Implementation_Plan.md`](./Patch_v1.1_Implementation_Plan.md), Patch v1.2: [`Patch_v1.2_Implementation_Plan.md`](./Patch_v1.2_Implementation_Plan.md), Änderungen: [`CHANGELOG.md`](./CHANGELOG.md).
+Eigenständiges Paper-Plugin für die Illunium Forever-World: Quartz-Rezept, Gruppen, Marriage, Playtime, Whitelist-Schutz und -Staging, Sitzen, konfigurierbares Auto-Vanish für OPs, `/spawn` und elf Survival-Leaderboards in **einer** JAR, ohne weitere Plugins. Produktvertrag: [`MVP.md`](./MVP.md), Umsetzung: [`Implementation_Plan.md`](./Implementation_Plan.md), Patch v1.1: [`Patch_v1.1_Implementation_Plan.md`](./Patch_v1.1_Implementation_Plan.md), Patch v1.2: [`Patch_v1.2_Implementation_Plan.md`](./Patch_v1.2_Implementation_Plan.md), Patch v1.3: [`Patch_v1.3_Implementation_Plan.md`](./Patch_v1.3_Implementation_Plan.md), Änderungen: [`CHANGELOG.md`](./CHANGELOG.md).
 
 ## Voraussetzungen
 
@@ -31,7 +31,7 @@ Das ist ein Entwicklungsbuild, keine Produktionsfreigabe; vor jedem Rollout auf 
 1. JAR nach `plugins/` eines Paper-26.3-Servers kopieren (Hash prüfen), Server starten.
 2. `server.properties`: `online-mode=true`, `white-list=true`, `enforce-whitelist=true` (der Whitelist Guard schaltet die beiden Whitelist-Werte notfalls selbst ein).
 3. `plugins/IlluniumCustom/config.yml` anpassen (vor allem `whitelistguard.staff`), Server neu starten.
-4. Spieler mit Vanilla `/whitelist add <Name>` freischalten.
+4. Vor dem Projektstart mit `/ic whitelist stage <Name>` nur vormerken; zur Freischaltung `/ic whitelist launch`. Vanilla `/whitelist add <Name>` gewährt sofort Zugang.
 
 Deployment, Launch, Backup/Restore und Rollback: [`docs/operations.md`](./docs/operations.md).
 
@@ -41,10 +41,12 @@ Deployment, Launch, Backup/Restore und Rollback: [`docs/operations.md`](./docs/o
 | --- | --- | --- |
 | `/group create\|list\|info\|members\|invite\|uninvite\|accept\|deny\|kick\|promote\|demote\|rename\|tag\|color\|transfer\|disband\|confirm\|cancel\|leave` | Gruppen mit Tag, Farbe (Name oder `#RRGGBB`) und Rollen Leader/Mod/Member | `illuniumcustom.use` |
 | `/marry <player>\|accept\|deny\|info [player]` · `/divorce [confirm\|cancel]` | Partnerschaft, Herz in der Tablist, Herzpartikel beim gemeinsamen Sneaken | `illuniumcustom.use` |
+| `/leaderboard [list\|<kategorie> [seite]]` · `/lb` | Elf Ranglisten, zehn Zeilen pro Seite und eigener Rang; OPs ausgeschlossen | `illuniumcustom.use` |
+| `/ic whitelist stage\|unstage\|staged\|preview\|launch\|status\|retry` | Vorbereitung ohne Zugang und expliziter nativer Launch | nur Vanilla-OP / Konsole |
 | `/playtime [player]` | Spielzeit, auch offline | `illuniumcustom.use` |
 | `/sit` · `/unsit` | Hinsetzen/Aufstehen (auch per Bewegungstaste) | `illuniumcustom.use` |
 | `/spawn` | Teleport zum Welt-Spawn nach 10 s Stillstehen; 60 min Cooldown, 30 s PvP-Sperre | `illuniumcustom.use` |
-| `/vanish` · `/unvanish` | OPs verbergen/zeigen; OPs joinen immer verborgen | nur Vanilla-OP |
+| `/vanish` · `/unvanish` | OPs verbergen/zeigen; OPs joinen standardmäßig verborgen, UUID-Opt-out möglich | nur Vanilla-OP |
 | `/ic status` · `/ic group inspect\|setleader\|disband ...` | Diagnose, Gruppen-Recovery | `illuniumcustom.admin` |
 | Vanilla `/whitelist add\|remove\|list\|reload` | Zugang (native Whitelist, nicht vom Plugin) | Vanilla/OP |
 
@@ -63,7 +65,7 @@ Rollenmatrix, Regeln und Verhalten aller Module: [`docs/commands.md`](./docs/com
 
 ## Backup und Restore
 
-Zu sichern: `plugins/IlluniumCustom/` (`data.db`, `config.yml`) und die native `whitelist.json` des Servers. `data.db` läuft im WAL-Modus: online nur mit `sqlite3 data.db ".backup backup.db"`, sonst bei gestopptem Server inklusive `data.db-wal`/`data.db-shm` kopieren. Restore: Server stoppen, `data.db` ersetzen, alte `-wal`/`-shm` löschen, starten. Details: [`docs/operations.md`](./docs/operations.md).
+Zu sichern: `plugins/IlluniumCustom/` (`data.db`, `config.yml`) und die nativen `whitelist.json` und `ops.json` sowie die Weltstatistiken des Servers. `data.db` läuft im WAL-Modus: online nur mit `sqlite3 data.db ".backup backup.db"`, sonst bei gestopptem Server inklusive `data.db-wal`/`data.db-shm` kopieren. Restore: Server stoppen, `data.db` ersetzen, alte `-wal`/`-shm` löschen, starten. Details: [`docs/operations.md`](./docs/operations.md).
 
 ## Entwicklung
 

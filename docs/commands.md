@@ -65,7 +65,7 @@ Gezählt wird ab der ersten Aktivierung des Plugins, sekundengenau, Ausgabe als 
 
 ## Whitelist Guard (`whitelistguard`)
 
-Die **native** Minecraft-Whitelist bleibt die einzige Zugangsliste; es gibt keine zweite Liste und keine eigenen Access-Commands. Spieler werden mit Vanilla verwaltet: `/whitelist add|remove|list|reload` (funktioniert auch für Accounts, die noch nie gejoint sind, solange Mojang erreichbar ist).
+Die **native** Minecraft-Whitelist bleibt die einzige Zugangsliste; es gibt keine zweite Zugangsliste. Das Staging aus v1.3 ist eine Warteschlange ohne Zugangsrecht. Spieler werden mit Vanilla verwaltet: `/whitelist add|remove|list|reload` (funktioniert auch für Accounts, die noch nie gejoint sind, solange Mojang erreichbar ist).
 
 - Beim Start und alle `check-interval-seconds` (Standard 30): `white-list` und `enforce-whitelist` werden eingeschaltet, falls aus (Warnung im Log, Wert landet in `server.properties`).
 - `staff`: geschützte Server-Staff-Accounts (**nicht** Gruppen-Mods) als `{uuid, name}`. Jeder Eintrag wird pro Start einmal bei Mojang geprüft (UUID muss existieren und aktuell diesen Namen tragen). Nur geprüfte Einträge werden nach einem versehentlichen `/whitelist remove` wieder eingetragen. Fehlerhafte oder nicht auflösbare Einträge werden nie freigeschaltet und als `ERROR` geloggt. Offline-Mode-UUIDs (Version 3) werden abgelehnt.
@@ -91,7 +91,7 @@ Nur auf festem Untergrund (Block, Stufe, Treppe, Teppich, …), nicht beim Flieg
 | `/unvanish` | Wieder sichtbar (Tablist, Entity), **ohne** Join-Nachricht |
 
 - Nur **Vanilla-Operatoren** (`isOp()`, bei jeder Ausführung geprüft, nur im Spiel). Keine Bukkit-Permission, Gruppenrolle oder `illuniumcustom.admin` reicht; für Nicht-OPs ist der Command nicht sichtbar. Wiederholte Aufrufe sind idempotent (keine doppelte Nachricht).
-- Jeder OP joint **verborgen**: keine Join-Nachricht, kein Tablist-Eintrag, keine Entity für andere Spieler (`hidePlayer` pro Zuschauer, auch für später joinende). Der Zustand ist flüchtig: nach `/unvanish` gilt er bis `/vanish` oder Quit, beim nächsten Login wieder verborgen.
+- Jeder OP joint standardmäßig **verborgen**: keine Join-Nachricht, kein Tablist-Eintrag, keine Entity für andere Spieler (`hidePlayer` pro Zuschauer, auch für später joinende). Der Zustand ist flüchtig: nach `/unvanish` gilt er bis `/vanish` oder Quit, beim nächsten Login gilt die UUID-Policy aus `vanish.auto-vanish-default` und `vanish.auto-vanish-overrides`. Ein OP mit Override `false` joint sichtbar mit normaler Join-Nachricht; auch ein vorheriges manuelles Vanish wird nicht über Quit gespeichert. Änderungen gelten nach vollständigem Neustart.
 - Verborgene OPs: keine Quit-, Todes- und Advancement-Nachricht; nicht in Serverlisten-Spielerzahl/-Probe, nicht in Completions von `/marry`, `/group invite`, `/playtime`; `/marry`/`/group invite` an sie meldet „nicht online“; Partner sehen das Offline-Herz, `/marry info` zeigt „offline“, keine Herzpartikel.
 - Verliert ein verborgener Spieler OP, wird er innerhalb einer Sekunde sichtbar. Beim Plugin-Stop werden alle wieder sichtbar.
 - Kein Spectator-, God- oder NoClip-Modus. Konsole und Log sehen weiter alles.
@@ -137,3 +137,43 @@ execute in minecraft:the_end run difficulty hard
 - Über dem Kopf: `[TAG] Name` (Tag in Gruppenfarbe, auch Hex), Tablist: `[TAG] Name ❤`.
 - Herz nur in der Tablist, für alle Zuschauer: rotes `❤` wenn der Partner online und nicht verborgen ist, sonst graues `💔` (`marriage.offline-symbol`).
 - Kompatibilität mit anderen Plugins, die Scoreboard-Teams oder Tablist-Namen setzen, ist kein MVP-Ziel (Details: [`architecture.md`](./architecture.md)).
+
+## Survival-Leaderboards (`leaderboard`, Patch v1.3)
+
+`/leaderboard` oder `/leaderboard list` zeigt alle Kategorien mit anklickbarem Befehl. `/lb` ist derselbe Command. `/leaderboard <kategorie> [seite]` zeigt höchstens zehn Zeilen, Seite ab 1 und den eigenen Platz auch außerhalb der Top 10. Nur `illuniumcustom.use` erforderlich, Konsole sieht Seiteninformationen ohne eigenen Rang.
+
+| Schlüssel | Messgröße und Beginn |
+| --- | --- |
+| `diamonds` | Normales + Tiefenschiefer-Diamanterz, Blöcke statt Fortune-Drops; Vanilla-Historie |
+| `placed` | Tatsächlich platzierte Positionen inkl. MultiPlace in Survival/Adventure; seit v1.3 |
+| `mined` | Summe gültiger Vanilla-Block-Abbaustatistiken |
+| `playtime` | Bestehendes Playtime-Modul einschließlich laufender Session; bei deaktiviertem Modul nicht verfügbar |
+| `distance` | Gehen + Sprinten + Sneaken, Zentimeter als m/km; Vanilla-Historie |
+| `mobs` | Vanilla-Mob-Kills |
+| `deaths` | Alle Vanilla-Tode |
+| `totems` | Nicht gecancelte Rettungen mit echter Totem-Hand; seit v1.3 |
+| `spawn` | Nur erfolgreiche `/spawn`-Teleports, keine Versuche/Abbrüche; seit v1.3 |
+| `fishing` | Vanilla-Angelfänge, nicht nur essbare Fische |
+| `peaklevel` | Höchstes seit v1.3 beobachtetes Level, initial aktuelles Level; fällt bei Tod/XP-Ausgabe nicht |
+
+Positive Werte absteigend, bei Gleichstand gleicher Wettbewerbsrang (1, 1, 3), Zeilenfolge nach letztem Namen und UUID. Neue Spieler: „Du hast noch keinen Eintrag“. Alle aktuellen Vanilla-OP-UUIDs, auch offline oder sichtbar, sind ausgeschlossen. Keine Online-/Offline-Kennzeichen, kein PvP-Ranking, keine Belohnungen oder Resets. Keine Sidebar oder Scoreboard-Änderung.
+
+Die Anzeige nutzt fertige Snapshots; der nächste Scan beginnt nach `leaderboard.cache-seconds`. Große Offline-Kohorten verlängern die Berechnung. Währenddessen bleibt der vorherige Stand sichtbar, beim ersten Scan erscheint ein Vorbereitungshinweis. Keine sekundengenaue Anzeige versprochen.
+
+## Whitelist-Staging (`whiteliststaging`, Patch v1.3)
+
+Nur **Vanilla-OP oder Serverkonsole**; das Permission-Flag `illuniumcustom.admin` allein reicht nicht. Kein eigener `/whitelist`-Alias. Alle Befehle beginnen mit `/ic whitelist`:
+
+| Unterbefehl | Wirkung |
+| --- | --- |
+| `stage <Name>` | Java-Profil asynchron anhand Mojang prüfen; UUID und aktuellen Namen ausschließlich in SQLite vormerken. Noch **kein Zugang**. Bereits nativ erlaubte Accounts werden so gemeldet. |
+| `unstage <Name>` | STAGED-/FAILED-Vormerkung entfernen; keine native Entwhitelistung. Während Launch/Recovery gesperrt. |
+| `staged [seite]` | Zehn verifizierte Einträge pro Seite, Status, native Freigabe und Fehler |
+| `preview` | Gesamtzahl, STAGED, nativ erlaubt, Fehler und abgeschlossene Einträge; keine Änderung |
+| `launch` | Alle zu Beginn STAGED-Einträge als feste Liste übernehmen; neue Vormerkungen bleiben für einen späteren Launch |
+| `status` | Laufender/letzter Launch mit Erfolgen, vorhandenen, fehlerhaften und offenen Einträgen |
+| `retry` | Nur FAILED-/unterbrochene APPLYING-Einträge, nie APPLIED/ALREADY_PRESENT |
+
+Profilfehler und Teilfehler werden angezeigt; `PARTIAL` ist kein Gesamterfolg. Nach einem DB-Fehler während Launch bleibt der Batch gesperrt: sauber neu starten, Recovery abwarten, `status`, `staged`, dann ausdrücklich `retry`. Recovery bestätigt nur bereits native Erfolge, sie erteilt beim Start keine neuen Zugangsrechte. Wiederholter Launch ist idempotent. Nach erfolgreicher Anwendung bleibt `/whitelist remove <Name>` wirksam; ein APPLIED-Datensatz stellt die Freigabe nicht wieder her. Geschützte Staff-Accounts bleiben von der bisherigen Guard-Policy erfasst.
+
+Vanilla `/whitelist add <Name>` schaltet dagegen **sofort** frei. Ablauf für den Projektstart und Backups: [`operations.md`](./operations.md).

@@ -9,9 +9,11 @@ modules:                      # <modul>: true|false; fehlende Module sind aktiv
   marriage: true
   playtime: true
   whitelistguard: true
+  whiteliststaging: true
   sit: true
   vanish: true
   spawn: true
+  leaderboard: true
 
 storage:
   filename: data.db           # SQLite-Datei im Pluginordner, nur einfacher Dateiname
@@ -23,11 +25,22 @@ whitelistguard:
   check-interval-seconds: 30  # 5..3600
   staff:                      # geschützte Server-Staff-Accounts (keine Gruppen-Mods)
     - {uuid: "069a79f4-44e9-4726-a5be-fca90e38aaf5", name: "Notch"}
+
+vanish:
+  auto-vanish-default: true
+  auto-vanish-overrides:
+    "11111111-1111-4111-8111-111111111111": false # Platzhalter: eigener Survival-Admin
+
+leaderboard:
+  cache-seconds: 60           # 30..3600 Sekunden nach abgeschlossenem Snapshot
 ```
 
 | Schlüssel | Standard | Regel |
 | --- | --- | --- |
 | `modules.<id>` | `true` | nur bekannte Module, nur `true`/`false`. Ein deaktiviertes Modul behält seine Daten in `data.db`. |
+| `vanish.auto-vanish-default` | `true` | nur Boolean; automatisches Verbergen ausschließlich für Vanilla-OPs |
+| `vanish.auto-vanish-overrides` | `{}` | kanonische UUID mit Bindestrichen → Boolean; Namen, Strings wie `"false"` und ungültige UUIDs verhindern den Start |
+| `leaderboard.cache-seconds` | `60` | Ganzzahl 30–3600; alte Snapshots bleiben während der nächsten Berechnung verfügbar |
 | `storage.filename` | `data.db` | `^[A-Za-z0-9_-][A-Za-z0-9._-]*$`, liegt immer im Pluginordner |
 | `marriage.offline-symbol` | `💔` | nicht leer; falls der Vanilla-Font `💔` nicht darstellt, `"✕❤"` setzen |
 | `whitelistguard.check-interval-seconds` | `30` | 5–3600; Prüfung ohne Netzwerkzugriff |
@@ -51,3 +64,9 @@ enforce-whitelist=true
 ```
 
 `white-list` und `enforce-whitelist` setzt der Guard beim Start und zyklisch wieder auf `true` (Warnung im Log, persistiert in `server.properties`). `online-mode=false` kann er nicht ändern und meldet es bei jedem Start als `ERROR`.
+
+## Patch v1.3
+
+Die UUIDs im Beispiel sind Platzhalter. Für einen sichtbaren Survival-Admin die echte Minecraft-Java-UUID auf `false` setzen und den Server vollständig neu starten. Ohne diese neuen Schlüssel bleibt jeder OP automatisch verborgen. Das beeinflusst nur den nächsten Join, keine manuelle Vanish-Entscheidung während der Sitzung und keine OP-Berechtigung. Nicht-OPs werden nie automatisch verborgen. Alle OPs bleiben aus öffentlichen Leaderboards ausgeschlossen, auch sichtbare Survival-Admins.
+
+`leaderboard` hat stets zehn Zeilen pro Seite und keinen OP-Teilnahme-Schalter. Ohne `playtime` bleibt nur diese Kategorie nicht verfügbar. Mit `modules.leaderboard: false` werden weder Commands noch Listener/Snapshots aktiviert; persistente Zähler bleiben erhalten. Bei `modules.whiteliststaging: false` bleiben sowohl SQLite-Vormerkungen als auch vorhandene native Freigaben unverändert. Staging hat keine zusätzlichen Konfigurationswerte.
