@@ -44,7 +44,7 @@ final class GroupChestService implements AutoCloseable, GroupChangeListener {
         repository = new GroupChestRepository(context.database());
         groups.onChange(this);
         groups.guardDisband(id -> {
-            if (sessions.containsKey(id)) throw new UserException("Gruppenkiste zuerst leeren und alle Ansichten schließen; Speicherung abwarten und erneut bestätigen.");
+            if (sessions.containsKey(id)) throw new UserException("Gruppenkiste zuerst leeren und alle Ansichten schließen; Speicherung abwarten und das Auflösen neu starten.");
         });
         timer = context.plugin().getServer().getScheduler().runTaskTimer(context.plugin(), () -> {
             for (Session session : List.copyOf(sessions.values())) if (session.holder != null) checkpoint(session);
