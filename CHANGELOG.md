@@ -1,5 +1,16 @@
 # Changelog
 
+## Unreleased — Patch v1.4
+
+Schema **v5**, additiv auf v4: `V5__group_chests.sql`. Keine neuen Abhängigkeiten. Plan: `Patch_v1.4_Implementation_Plan.md`.
+
+- `/gec`: eine gemeinsame 27-Slot-Kiste pro Gruppen-ID für alle Rollen ab vier eingetragenen Mitgliedern. Unter vier bleiben gefüllte Kisten zur Entnahme zugänglich; leere sind gesperrt.
+- Versionierte Paper-NBT-Snapshots mit Revisionen, gemeinsamem Live-Inventar, dedupliziertem Laden, Checkpoints nach Änderungen und finalem Flush beim Schließen/Stop. Beschädigte Daten und Speicherfehler sperren den Zugriff.
+- Gruppen-Lifecycle schließt entfernte Mitglieder aus offenen Kisten aus. Normales und Admin-Disband benötigen eine leere, geschlossene, bestätigte Kiste; SQL-Trigger schützt zusätzlich vor dem Löschen gefüllter Kisten.
+- `/g <Nachricht>`: privater, flüchtiger Chat an aktuelle Online-Mitglieder, Gruppenfarbe, maximal 256 Unicode-Codepoints, standardmäßig eine Sekunde Cooldown pro Sender; Vanish-Sender werden abgewiesen.
+- Leaderboards erhalten farbige Kategorien, Gold/Silber/Bronze, hervorgehobene Werte und klickbare Seitenwechsel. Statistikberechnung, Filter, Gleichstände und Cache bleiben erhalten.
+- Strikte, kompatible Defaults unter `groups.gec` und `groups.chat`; separate Feature-Schalter. Automatisierte Tests und isolierte Paper-Prüfungen sind dokumentiert; echte Client-E2E und Produktionsfreigabe bleiben offen.
+
 ## Unreleased — Patch v1.3
 
 Schema **v4**, additiv auf v2: `V3__leaderboards.sql`, `V4__whitelist_staging.sql`. Keine neuen Abhängigkeiten. Plan: `Patch_v1.3_Implementation_Plan.md`.

@@ -90,6 +90,7 @@ final class GroupRepository {
 
     /** Memberships go with it (ON DELETE CASCADE). */
     static void delete(Connection c, long id) throws SQLException {
+        GroupChestRepository.requireEmpty(c, id);
         update(c, "DELETE FROM groups WHERE id = ?", id);
     }
 

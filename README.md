@@ -1,6 +1,6 @@
 # IlluniumCustom
 
-Eigenständiges Paper-Plugin für die Illunium Forever-World: Quartz-Rezept, Gruppen, Marriage, Playtime, Whitelist-Schutz und -Staging, Sitzen, konfigurierbares Auto-Vanish für OPs, `/spawn` und elf Survival-Leaderboards in **einer** JAR, ohne weitere Plugins. Produktvertrag: [`MVP.md`](./MVP.md), Umsetzung: [`Implementation_Plan.md`](./Implementation_Plan.md), Patch v1.1: [`Patch_v1.1_Implementation_Plan.md`](./Patch_v1.1_Implementation_Plan.md), Patch v1.2: [`Patch_v1.2_Implementation_Plan.md`](./Patch_v1.2_Implementation_Plan.md), Patch v1.3: [`Patch_v1.3_Implementation_Plan.md`](./Patch_v1.3_Implementation_Plan.md), Änderungen: [`CHANGELOG.md`](./CHANGELOG.md).
+Eigenständiges Paper-Plugin für die Illunium Forever-World: Quartz-Rezept, Gruppen mit gemeinsamer Enderchest und privatem Chat, Marriage, Playtime, Whitelist-Schutz und -Staging, Sitzen, konfigurierbares Auto-Vanish für OPs, `/spawn` und elf farbige Survival-Leaderboards in **einer** JAR, ohne weitere Plugins. Produktvertrag: [`MVP.md`](./MVP.md), Umsetzung: [`Implementation_Plan.md`](./Implementation_Plan.md), Patch v1.1: [`Patch_v1.1_Implementation_Plan.md`](./Patch_v1.1_Implementation_Plan.md), Patch v1.2: [`Patch_v1.2_Implementation_Plan.md`](./Patch_v1.2_Implementation_Plan.md), Patch v1.3: [`Patch_v1.3_Implementation_Plan.md`](./Patch_v1.3_Implementation_Plan.md), Patch v1.4: [`Patch_v1.4_Implementation_Plan.md`](./Patch_v1.4_Implementation_Plan.md), Änderungen: [`CHANGELOG.md`](./CHANGELOG.md).
 
 ## Voraussetzungen
 
@@ -40,6 +40,8 @@ Deployment, Launch, Backup/Restore und Rollback: [`docs/operations.md`](./docs/o
 | Command | Effekt | Permission |
 | --- | --- | --- |
 | `/group create\|list\|info\|members\|invite\|uninvite\|accept\|deny\|kick\|promote\|demote\|rename\|tag\|color\|transfer\|disband\|confirm\|cancel\|leave` | Gruppen mit Tag, Farbe (Name oder `#RRGGBB`) und Rollen Leader/Mod/Member | `illuniumcustom.use` |
+| `/gec` | Gemeinsame 27-Slot-Kiste ab vier Mitgliedern; darunter nur Entnahme vorhandener Items | `illuniumcustom.use` |
+| `/g <Nachricht>` | Privater Gruppenchat für Online-Mitglieder; im Vanish kein Senden | `illuniumcustom.use` |
 | `/marry <player>\|accept\|deny\|info [player]` · `/divorce [confirm\|cancel]` | Partnerschaft, Herz in der Tablist, Herzpartikel beim gemeinsamen Sneaken | `illuniumcustom.use` |
 | `/leaderboard [list\|<kategorie> [seite]]` · `/lb` | Elf Ranglisten, zehn Zeilen pro Seite und eigener Rang; OPs ausgeschlossen | `illuniumcustom.use` |
 | `/ic whitelist stage\|unstage\|staged\|preview\|launch\|status\|retry` | Vorbereitung ohne Zugang und expliziter nativer Launch | nur Vanilla-OP / Konsole |
@@ -70,3 +72,5 @@ Zu sichern: `plugins/IlluniumCustom/` (`data.db`, `config.yml`) und die nativen 
 ## Entwicklung
 
 Lokaler Testserver, Modulvertrag und Testnachweise: [`docs/development.md`](./docs/development.md), Architektur: [`docs/architecture.md`](./docs/architecture.md).
+
+Patch v1.4 nutzt Schema **v5**. Vor einem Update DB und Welten sichern; Rückkehr zu v1.3 benötigt die passende V4-DB und den zugehörigen Welt-/Spielerstand. Echte Client-E2E und Produktionsfreigabe stehen noch aus; Prüfstand in [`docs/development.md`](./docs/development.md).

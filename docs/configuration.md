@@ -18,6 +18,16 @@ modules:                      # <modul>: true|false; fehlende Module sind aktiv
 storage:
   filename: data.db           # SQLite-Datei im Pluginordner, nur einfacher Dateiname
 
+groups:
+  gec:
+    enabled: true
+    min-members: 4            # In v1.4 genau 4
+    slots: 27                # In v1.4 genau 27
+  chat:
+    enabled: true
+    message-max-length: 256  # Ganzzahl 1..256 Unicode-Codepoints
+    cooldown-seconds: 1       # Ganzzahl 0..10; 0 deaktiviert
+
 marriage:
   offline-symbol: "💔"         # Tablist-Zeichen bei offline Partner, nicht leer; Fallback z. B. "✕❤"
 
@@ -70,3 +80,9 @@ enforce-whitelist=true
 Die UUIDs im Beispiel sind Platzhalter. Für einen sichtbaren Survival-Admin die echte Minecraft-Java-UUID auf `false` setzen und den Server vollständig neu starten. Ohne diese neuen Schlüssel bleibt jeder OP automatisch verborgen. Das beeinflusst nur den nächsten Join, keine manuelle Vanish-Entscheidung während der Sitzung und keine OP-Berechtigung. Nicht-OPs werden nie automatisch verborgen. Alle OPs bleiben aus öffentlichen Leaderboards ausgeschlossen, auch sichtbare Survival-Admins.
 
 `leaderboard` hat stets zehn Zeilen pro Seite und keinen OP-Teilnahme-Schalter. Ohne `playtime` bleibt nur diese Kategorie nicht verfügbar. Mit `modules.leaderboard: false` werden weder Commands noch Listener/Snapshots aktiviert; persistente Zähler bleiben erhalten. Bei `modules.whiteliststaging: false` bleiben sowohl SQLite-Vormerkungen als auch vorhandene native Freigaben unverändert. Staging hat keine zusätzlichen Konfigurationswerte.
+
+## Patch v1.4
+
+Alle neuen Werte sind optional; fehlende Abschnitte verwenden die obigen Defaults. `groups.gec.enabled` und `groups.chat.enabled` akzeptieren ausschließlich Booleans und registrieren bei `false` den jeweiligen Command/Listener nicht. `modules.groups: false` deaktiviert auch beide Features. Gespeicherte Kisten bleiben erhalten; gefüllte Kisten verhindern auch bei deaktiviertem Kistenfeature eine Gruppenauflösung. Zum Leeren das Feature wieder aktivieren.
+
+`min-members` muss genau **4**, `slots` genau **27** sein; andere Werte werden beim Start abgewiesen. Chatlänge 1–256 und Cooldown 0–10 sind Ganzzahlen, Zahlen als Strings werden nicht akzeptiert. Ein ungültiger Wert bricht den Pluginstart ab. Das feste Leaderboard-Farbschema hat keine zusätzliche Einstellung; `leaderboard.cache-seconds` bleibt unverändert.

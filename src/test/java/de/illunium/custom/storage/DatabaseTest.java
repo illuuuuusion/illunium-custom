@@ -29,6 +29,53 @@ class DatabaseTest {
     Path dir;
 
     @Test
+    void upgradeFromV4PreservesAllExistingTablesAndIsIdempotent() throws Exception {
+        Path file = dir.resolve("v4.db");
+        try (Connection c = DriverManager.getConnection("jdbc:sqlite:" + file); Statement s = c.createStatement()) {
+            s.executeUpdate("CREATE TABLE schema_migrations(version INTEGER PRIMARY KEY, applied_at INTEGER NOT NULL)");
+            for (int version = 1; version <= 4; version++) {
+                try (var input = getClass().getResourceAsStream("/db/migrations/" + Database.MIGRATIONS.get(version - 1))) {
+                    s.executeUpdate(new String(input.readAllBytes(), java.nio.charset.StandardCharsets.UTF_8));
+                }
+                s.executeUpdate("INSERT INTO schema_migrations VALUES (" + version + ", 123)");
+            }
+            s.executeUpdate("INSERT INTO groups VALUES(1, 'Nova', 'NOVA', '#123456', '" + A + "', 42)");
+            s.executeUpdate("INSERT INTO group_memberships VALUES(1, '" + A + "', 'MOD', 42)");
+            s.executeUpdate("INSERT INTO marriages VALUES(1, '" + A + "', '" + B + "', 42)");
+            s.executeUpdate("INSERT INTO player_profiles VALUES('" + A + "', 'Alex', 42)");
+            s.executeUpdate("INSERT INTO playtime VALUES('" + A + "', 12345, 42)");
+            s.executeUpdate("INSERT INTO spawn_cooldowns VALUES('" + A + "', 9999999999999)");
+            s.executeUpdate("INSERT INTO leaderboard_metrics VALUES('" + A + "', 4, 5, 6, 7, 42)");
+            s.executeUpdate("INSERT INTO leaderboard_spawn_events VALUES('event', '" + A + "', 42)");
+            s.executeUpdate("INSERT INTO whitelist_stage_launches VALUES('launch', 'CONSOLE', 42, NULL, 'RUNNING')");
+            s.executeUpdate("INSERT INTO whitelist_stage_entries VALUES('" + A + "', 'Alex', 'STAGED', 'CONSOLE', 42, NULL, 'launch', 0, NULL)");
+            s.executeUpdate("INSERT INTO whitelist_stage_audit VALUES(1, 'CONSOLE', '" + A + "', 'Alex', 'stage', 'OK', 42)");
+        }
+        var tables = List.of("groups", "group_memberships", "marriages", "player_profiles", "playtime", "spawn_cooldowns",
+                "leaderboard_metrics", "leaderboard_spawn_events", "whitelist_stage_launches", "whitelist_stage_entries", "whitelist_stage_audit");
+        var before = new java.util.HashMap<String, String>();
+        try (Connection c = DriverManager.getConnection("jdbc:sqlite:" + file)) {
+            for (String table : tables) before.put(table, dump(c, table));
+        }
+        for (int start = 0; start < 2; start++) {
+            try (Database db = Database.open(file)) {
+                assertEquals(5, db.schemaVersion());
+                for (String table : tables) assertEquals(before.get(table), db.transaction(c -> dump(c, table)).join(), table);
+                assertEquals(4, count(db, "SELECT COUNT(*) FROM schema_migrations WHERE applied_at = 123"));
+                assertEquals(5, count(db, "SELECT COUNT(*) FROM schema_migrations"));
+            }
+        }
+    }
+
+    private static String dump(Connection c, String table) throws SQLException {
+        var result = new StringBuilder();
+        try (var s = c.createStatement(); var r = s.executeQuery("SELECT * FROM " + table)) {
+            while (r.next()) for (int i = 1; i <= r.getMetaData().getColumnCount(); i++) result.append(r.getString(i)).append('|');
+        }
+        return result.toString();
+    }
+
+    @Test
     void migrationIsIdempotent() throws Exception {
         Path file = dir.resolve("data.db");
         try (Database db = Database.open(file)) {

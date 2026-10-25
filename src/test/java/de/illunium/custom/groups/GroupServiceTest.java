@@ -55,6 +55,24 @@ class GroupServiceTest {
     }
 
     @Test
+    void lifecycleObserverIncludesUnchangedMembersAndOnlyCommittedMutations() {
+        var changes = new java.util.ArrayList<List<Group>>();
+        groups.onChange((oldGroup, newGroup) -> changes.add(java.util.Arrays.asList(oldGroup, newGroup)));
+        setUpFullGroup();
+        join(OUTSIDER, "Nova");
+        changes.clear(); shown.clear();
+        main.await(groups.kick(LEADER, OUTSIDER));
+        assertEquals(1, changes.size());
+        assertEquals(4, changes.getFirst().getFirst().members().size());
+        assertEquals(3, changes.getFirst().getLast().members().size());
+        assertEquals(1, shown.size(), "appearance still only reports the removed member");
+        assertEquals("You may not kick that member.", main.fails(groups.kick(MEMBER, LEADER)));
+        assertEquals(1, changes.size(), "failed transactions do not notify observers");
+        main.await(groups.adminDisband(groups.groupOf(LEADER).orElseThrow().id()));
+        assertNull(changes.getLast().getLast());
+    }
+
+    @Test
     void namesAndTagsAreValidatedAndCaseInsensitiveUnique() {
         main.await(groups.create(LEADER, "NOVA", "NOVA"));
 
