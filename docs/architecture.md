@@ -54,3 +54,15 @@ Feature Commands/Listener ──► Feature Service (Regeln, Policy)
 - **Recovery:** Beim Start werden APPLYING-Zeilen gegen die native Whitelist gelesen: vorhandene Erfolge als APPLIED, fehlende als FAILED; keine neuen nativen Writes. Unterbrochene Launches erhalten PARTIAL. APPLIED/ALREADY_PRESENT werden nie automatisch erneut angewendet. Ein DB-Fehler im laufenden Launch sperrt ihn bis zum Neustart, um nicht vor unbestätigten Claims weiterzumachen. WhitelistGuard behält seine bisherige, getrennte Staff-Policy.
 
 V3/V4 sind additive Migrationen. V1/V2 bleiben unverändert. Die native Whitelist bleibt einzige Zugangsliste; die Staging-Tabellen sind weder Login-Hook noch Reaktivierungsliste.
+
+## Gruppen-Erweiterungen v1.4
+
+`GroupsModule` besitzt `/group`, `/g` und `/gec`; keine zusätzlichen Feature-Module. `GroupService.apply` meldet nach jeder bestätigten Mutation `oldGroup/newGroup` an `GroupChangeListener`, auch wenn die verbleibenden Mitglieder keine Appearance-Änderung benötigen. `/g` liest pro Aufruf die aktuelle UUID-Mitgliedschaft und `VisibilityService`; ausschließlich Text-Komponenten und Online-Empfänger, keine DB oder Chathistorie.
+
+`GroupChestService` hält pro Gruppen-ID eine Session mit genau einem `Inventory` und einem identitätsgeprüften `GroupChestHolder`. Gemeinsame Lade-Future und Zähler wartender Öffnungen verhindern doppelte Inventare oder vorzeitige Cache-Freigabe. Nach dem Laden werden Onlinezustand, Mitgliedschaft, Gruppengröße, Session und Aktivierung erneut geprüft. ItemStack/Inventory bleiben auf dem Hauptthread. Der Entnahme-Modus nutzt eine Allowlist für Klickaktionen und verhindert Drag in obere Slots; unbekannte/bundlebezogene Aktionen bleiben gesperrt. View-Wechsel aus Klick-/Drag-Handlern erfolgen im nächsten Tick.
+
+Schema V5 speichert einen vollständigen, versionierten 27-Slot-Blob mit Leer-/Item-Markern und Paper-NBT pro belegtem Slot, belegten Slots, Revision und Zeitstempel. DB-Queue erhält unveränderliche Byte-Snapshots; Updates vergleichen die vorherige Revision. Nach Events wird im nächsten Tick gespeichert, zusätzlich jede Sekunde verglichen. Letztes Schließen und Disable erfassen den finalen Zustand. Cache-Freigabe erst ohne Zuschauer, wartende Öffnungen, ausstehende Checkpoints oder unbestätigte Revisionen. Fehler behalten die Session und sperren den Zugriff; es gibt keinen leeren Deserialisierungs-Fallback.
+
+Disband reserviert die Gruppen-ID auf dem Main Thread vor dem SQL-Auftrag, damit während des Löschens keine Kiste lädt. Lebende/ladende/fehlerhafte Sessions blockieren beide Disband-Pfade; in der Löschtransaktion wird `occupied_slots` geprüft, zusätzlich schützt ein SQL-Trigger. Nur leere bestätigte Kisten werden per FK-Cascade entfernt. Ein wiederverwendeter numerischer Gruppen-Key erbt keine Items.
+
+`LeaderboardMessageFormatter` formatiert bestehende Snapshot-Zeilen und Navigationsziele. Statistikreader, Repository, Ranking und Cache-Ablauf bleiben unverändert; die allgemeine `Chat.info`-Darstellung bleibt grau.

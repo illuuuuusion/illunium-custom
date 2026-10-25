@@ -8,7 +8,7 @@ Gilt für Testserver und Forever-World. **Produktions-Rollouts sind ein separate
 | --- | --- |
 | Paper | 26.3 Build 207 (`26.3-207-main@bc68acd`, API `26.3.build.207-stable`) |
 | Java | 25 (getestet: Temurin 25.0.4.1) |
-| SQLite-Schema | v4 ab Patch v1.3 (V3 Leaderboards, V4 Staging); v1.2 kennt v2, 0.1.0-rc.1/v1.1 nur v1 |
+| SQLite-Schema | v5 ab Patch v1.4 (V5 Gruppenkisten); v1.3 kennt v4 (Leaderboards/Staging); v1.2 kennt v2, 0.1.0-rc.1/v1.1 nur v1 |
 | Config | Vorlage aus dieser Version, ohne Versionsfeld; neue Schlüssel haben Standardwerte |
 | JAR | `IlluniumCustom-0.1.0-rc.1.jar`, SHA-256 aus `SHA256SUMS`/`IlluniumCustom.jar.sha256` des CI-Builds; lokal reproduzierbar |
 
@@ -98,3 +98,13 @@ Die Audit-Tabelle und Serverlogs enthalten Akteur, UUID, verifizierten Namen, Ak
 - [ ] Konsistentes Backup und Rollback mit passender JAR/DB am Testserver, dokumentierte manuelle Produktionsfreigabe.
 
 Eigene Block-Deltas werden alle 5 s sowie bei Quit/Disable geschrieben; Totem/XP/Spawn stoßen zusätzlich einen Flush an. Bei DB-Fehlern bleiben Deltas im Speicher und werden erneut versucht; ein Prozessabsturz oder dauerhaft defekte DB beim Shutdown kann noch nicht bestätigte Deltas verlieren. Spawn-IDs werden dauerhaft zur Deduplizierung behalten; derzeit keine automatische Bereinigung. Keine historischen Werte schätzen.
+
+## Patch v1.4: Gruppenkisten, Recovery und Freigabe
+
+Vor jedem Update **DB und vollständige Welten inklusive playerdata** sowie bisherige JAR und Konfiguration konsistent sichern. Für SQLite die Backup-API verwenden; für einen gemeinsamen DB-/Weltstand den Server sauber stoppen. Auf isolierter Kopie V4 → V5, zweiter Start, Inventar-Spezialitems und Restore prüfen. Die v1.3-JAR lehnt Schema V5 ab: Rollback benötigt die v1.3-JAR mit passendem **V4-Backup** und zeitlich passendem Welt-/Spielerstand. Keine Migrationseinträge löschen oder gefüllte Kisten manuell entfernen.
+
+Bei `Gruppenkiste gesperrt` oder Speicherfehler: betroffene Gruppe nicht auflösen. Server geordnet stoppen, aktuelle DB/WAL/SHM und Welten sichern, Log und Gruppen-ID/Revision prüfen. Bei beschädigtem Blob den Originaldatensatz erhalten; auf einer separaten Kopie einen bekannten guten vollständigen Backupstand mit passender JAR wiederherstellen, `PRAGMA integrity_check` sowie Kisten- und Spielerbestände prüfen. Erst nach erfolgreichem Restore-Test kontrolliert neu starten. Niemals durch eine leere Kiste oder pauschales SQL-Update „reparieren“. Fehlgeschlagene Speichervorgänge werden sichtbar gemeldet und geloggt; der Cache bleibt bis Stop gesperrt.
+
+Kisten-Snapshots folgen einer erlaubten Änderung im nächsten Tick; bei geordnetem Stop wird final geschrieben und die DB-Queue abgearbeitet. Vanilla-Spielerinventar und Plugin-SQLite bilden **keine gemeinsame Transaktion**. Harte Host-/Prozessabstürze können letzte Transfers verlieren oder duplizieren; bei Recovery müssen beide Bestände gemeinsam geprüft werden. Der Prüfplugin injiziert begrenzt SQL-Schreibfehler und beschädigte Payloads; ein echter Prozessabsturz während Client-Transfers bleibt Teil der manuellen Abnahme.
+
+**Offen vor Produktionsfreigabe: mindestens vier echte Vanilla-Clients.** Die Checklisten in `Patch_v1.4_Implementation_Plan.md` vollständig abnehmen: gemeinsames Live-Inventar und Rollen, alle Klick-/Shift-/Drag-/Hotbar-/Offhand-/Double-Click-/Creative-/Bundle-Wege beim Wechsel 4 → 3 → 4, Kick/Leave bei offenem GUI, Disconnect während Laden/Speichern, parallele Entnahmen, Neustart und kontrollierter Crash/Restore, Sonderitems/Data Components, privater Gruppenchat mit Vanish und visuelle Leaderboards. Außerdem bisherige Whitelist-, Spawn-, Sit-, Marriage- und Gruppenrechte-Flows wiederholen. Automatisierte Prüfungen und synthetische Zuschauer erfüllen dieses Gate nicht. Kein Produktionsrollout oder Serverneustart der Forever-World durch diesen Patch.

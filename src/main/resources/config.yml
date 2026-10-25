@@ -17,6 +17,16 @@ storage:
   # SQLite file inside the plugin folder.
   filename: data.db
 
+groups:
+  gec:
+    enabled: true
+    min-members: 4 # Fixed in v1.4; other values are rejected.
+    slots: 27 # Fixed in v1.4.
+  chat:
+    enabled: true
+    message-max-length: 256 # 1..256 Unicode codepoints.
+    cooldown-seconds: 1 # 0..10; 0 disables the per-sender cooldown.
+
 marriage:
   # Tablist symbol when the partner is offline. If the vanilla font does not render it, use e.g. "✕❤".
   offline-symbol: "💔"

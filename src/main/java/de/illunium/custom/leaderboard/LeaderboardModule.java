@@ -22,7 +22,6 @@ import java.util.concurrent.CompletableFuture;
 import java.util.logging.Level;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-import net.kyori.adventure.text.event.ClickEvent;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
@@ -166,10 +165,9 @@ public final class LeaderboardModule implements FeatureModule, BasicCommand {
         var sender = source.getSender();
         if (!sender.hasPermission(permission())) { sender.sendMessage(Chat.error("Keine Berechtigung.")); return; }
         if (args.length == 0 || args.length == 1 && args[0].equalsIgnoreCase("list")) {
-            sender.sendMessage(Chat.info("Illunium » Survival-Leaderboards"));
-            for (var d : LeaderboardDefinition.values()) sender.sendMessage(Chat.info(d.title + " — /leaderboard " + d.key()
-                    + (d == LeaderboardDefinition.PLAYTIME && !playtime.available() ? " (nicht verfügbar)" : ""))
-                    .clickEvent(ClickEvent.runCommand("/leaderboard " + d.key())));
+            sender.sendMessage(LeaderboardMessageFormatter.header(null));
+            for (var d : LeaderboardDefinition.values()) sender.sendMessage(LeaderboardMessageFormatter.overviewEntry(d,
+                    d != LeaderboardDefinition.PLAYTIME || playtime.available()));
             return;
         }
         var definition = LeaderboardDefinition.find(args[0]);
@@ -178,16 +176,16 @@ public final class LeaderboardModule implements FeatureModule, BasicCommand {
         try {
             List<RankingSnapshot.Row> rows = rows(definition);
             int pages = Math.max(1, (rows.size() + 9) / 10), page = page(args.length == 2 ? args[1] : "1", pages);
-            sender.sendMessage(Chat.info("Illunium » Leaderboard: " + definition.title));
+            sender.sendMessage(LeaderboardMessageFormatter.header(definition));
             sender.sendMessage(Chat.info(definition.history + " · Cache, keine Livewerte"));
             if (snapshots.isEmpty()) sender.sendMessage(Chat.info("Statistiken werden vorbereitet. Bitte später erneut aufrufen."));
             else if (rows.isEmpty()) sender.sendMessage(Chat.info("Noch keine Einträge."));
-            rows.stream().skip((page - 1L) * 10).limit(10).forEach(r -> sender.sendMessage(Chat.info("#" + r.rank() + "  " + r.name() + " — " + definition.format(r.value()))));
-            sender.sendMessage(Chat.info("Seite " + page + "/" + pages + (page < pages ? " · /leaderboard " + definition.key() + " " + (page + 1) : "")));
+            rows.stream().skip((page - 1L) * 10).limit(10).forEach(r -> sender.sendMessage(LeaderboardMessageFormatter.entry(definition, r)));
+            sender.sendMessage(LeaderboardMessageFormatter.navigation(definition, page, pages));
             if (sender instanceof Player player) {
                 var own = rows.stream().filter(r -> r.player().equals(player.getUniqueId())).findFirst();
-                sender.sendMessage(Chat.info(excluded().contains(player.getUniqueId()) ? "OP-Konten nehmen nicht am öffentlichen Ranking teil."
-                        : own.map(r -> "Dein Platz: #" + r.rank() + " — " + definition.format(r.value())).orElse("Du hast noch keinen Eintrag")));
+                sender.sendMessage(excluded().contains(player.getUniqueId()) ? Chat.info("OP-Konten nehmen nicht am öffentlichen Ranking teil.")
+                        : own.map(r -> LeaderboardMessageFormatter.ownRank(definition, r)).orElse(Chat.info("Du hast noch keinen Eintrag")));
             }
         } catch (UserException e) { sender.sendMessage(Chat.error(e.getMessage())); }
     }

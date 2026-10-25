@@ -62,3 +62,20 @@ tasks.jar {
     exclude("META-INF/MANIFEST.MF", "META-INF/*.SF", "META-INF/*.DSA", "META-INF/*.RSA", "META-INF/versions/*/module-info.class", "module-info.class")
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
 }
+
+// Opt-in test plugin, for a disposable Paper server only; never included in release artifacts.
+tasks.register<Jar>("paperProbeJar") {
+    dependsOn(tasks.jar, tasks.testClasses)
+    archiveFileName = "IlluniumGroupChestProbe.jar"
+    destinationDirectory = layout.buildDirectory.dir("paper-probe")
+    from(tasks.jar.map { zipTree(it.archiveFile) }) { exclude("plugin.yml") }
+    from(sourceSets.test.get().output) { include("**/GroupChestPaperProbe*.class") }
+    val descriptor = layout.buildDirectory.file("paper-probe-plugin/plugin.yml")
+    doFirst {
+        descriptor.get().asFile.apply {
+            parentFile.mkdirs()
+            writeText("name: IlluniumGroupChestProbe\nversion: test\nmain: de.illunium.custom.groups.GroupChestPaperProbe\napi-version: '26.3'\n")
+        }
+    }
+    from(descriptor)
+}

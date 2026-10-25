@@ -8,15 +8,19 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.time.Duration;
 import java.time.InstantSource;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.function.BiConsumer;
+import java.util.function.LongConsumer;
 import java.util.regex.Pattern;
 
 /**
@@ -54,6 +58,9 @@ public final class GroupService {
     private final BiConsumer<UUID, Group> membershipChanged;
     private final Map<Long, Group> groups = new HashMap<>();
     private final Map<UUID, Long> groupOfMember = new HashMap<>();
+    private final List<GroupChangeListener> changeListeners = new ArrayList<>();
+    private final Set<Long> disbanding = new HashSet<>();
+    private LongConsumer disbandGuard = id -> { };
     private final ExpiringMap<InviteKey, UUID> invites;
     private final ExpiringMap<UUID, Confirmation> confirmations;
 
@@ -89,6 +96,19 @@ public final class GroupService {
 
     public Collection<Group> all() {
         return List.copyOf(groups.values());
+    }
+
+    public void onChange(GroupChangeListener listener) { changeListeners.add(listener); }
+
+    void guardDisband(LongConsumer guard) { disbandGuard = guard; }
+
+    boolean disbanding(long id) { return disbanding.contains(id); }
+
+    private CompletableFuture<Group> disband(long id, Database.SqlWork<Long> work) {
+        disbandGuard.accept(id);
+        require(disbanding.add(id), "Die Gruppe wird bereits aufgelöst.");
+        // Reserve before queuing SQL: a new /gec must not open against a pending delete.
+        return mutate(work).whenCompleteAsync((group, error) -> disbanding.remove(id), mainThread);
     }
 
     /** Groups with a valid invite for {@code invitee}. */
@@ -248,7 +268,7 @@ public final class GroupService {
     public CompletableFuture<Confirmed> confirm(UUID actor) {
         Confirmation pending = confirmations.remove(actor)
                 .orElseThrow(() -> new UserException("Nothing to confirm (requests expire after 30 seconds)."));
-        return mutate(c -> {
+        Database.SqlWork<Long> work = c -> {
             Group group = groupOf(c, actor);
             require(group.id() == pending.groupId() && group.leader().equals(actor), "You are no longer the leader of that group.");
             switch (pending) {
@@ -260,7 +280,9 @@ public final class GroupService {
                 case Disband _ -> GroupRepository.delete(c, group.id());
             }
             return group.id();
-        }).thenApply(group -> new Confirmed(pending, group));
+        };
+        return (pending instanceof Disband ? disband(pending.groupId(), work) : mutate(work))
+                .thenApply(group -> new Confirmed(pending, group));
     }
 
     public Confirmation cancel(UUID actor) {
@@ -280,7 +302,7 @@ public final class GroupService {
     }
 
     public CompletableFuture<Group> adminDisband(long groupId) {
-        return mutate(c -> {
+        return disband(groupId, c -> {
             require(GroupRepository.load(c, groupId).isPresent(), "That group no longer exists.");
             GroupRepository.delete(c, groupId);
             return groupId;
@@ -354,6 +376,7 @@ public final class GroupService {
         } else {
             invites.removeIf((k, v) -> k.groupId() == id);
         }
+        changeListeners.forEach(listener -> listener.changed(old, fresh));
         return fresh != null ? fresh : old;
     }
 

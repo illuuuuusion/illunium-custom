@@ -9,7 +9,7 @@ Alle Spieler-Commands benötigen `illuniumcustom.use` (Standard: jeder), alle `/
 | `/ic status` | Version, Schema-Version, aktive Module |
 | `/ic group inspect <group>` | gespeicherten Zustand und Leader-Invariante prüfen |
 | `/ic group setleader <group> <player>` | Leader neu setzen (Ziel muss Mitglied sein; bisheriger Leader wird Mod) |
-| `/ic group disband <group>` | Gruppe sofort auflösen |
+| `/ic group disband <group>` | Gruppe auflösen, nur bei leerer, geschlossener und gespeicherter Gruppenkiste |
 
 Jede Admin-Änderung wird mit Absender geloggt (`[admin] <name> ...`). Auch aus der Konsole nutzbar.
 
@@ -40,6 +40,15 @@ Kick/Promote/Demote/Transfer funktionieren auch für offline Mitglieder (letzter
 Farben: Name case-insensitiv (`red`, `Light_Purple`) oder genau sechsstelliges Hex **mit** `#` (`#ff8800`); `FF8800`, `#FFF`, `#FFFFFFFF`, `#GG0000`, Format-Codes und MiniMessage werden abgelehnt. Gespeichert wird `NAME` bzw. `#RRGGBB` in Großbuchstaben; ein Hex-Wert, der genau einer Standardfarbe entspricht (`#FF5555`), wird als diese Farbe gespeichert. Tab-Completion schlägt die 16 Namen vor.
 
 Admin-Recovery: siehe oben (`/ic group ...`).
+
+### Gruppenkiste und Gruppenchat (Patch v1.4)
+
+- `/gec`: alle Rollen teilen dieselben **27 Slots**. Ab **vier eingetragenen Mitgliedern**, inklusive Offline-Mitgliedern, überall ohne Warmup/Cooldown/Combat-Tag verfügbar. Die persönliche Vanilla-Enderchest bleibt separat.
+- Sinkt die Gruppe unter vier, darf sie vorhandene Items weiter entnehmen. Eine leere Kiste bleibt gesperrt. Einlagen, Shift-Klick aus dem Spielerinventar, Drag in die Kiste, Hotbar-/Offhand-Swap, Double-Click, Creative- und Bundle-Aktionen sind dann gesperrt. Entnehmen per normalem Klick oder Shift-Klick aus der Kiste und Ablegen im Spielerinventar ist möglich. Bei vier Mitgliedern gelten wieder volle Rechte.
+- Kick/Leave beendet den Zugriff des entfernten Mitglieds sofort. Zum Auflösen zuerst vollständig leeren, alle Ansichten schließen und die DB-Bestätigung abwarten; danach `/group disband` und `/group confirm` erneut ausführen. Das gilt auch für Admins. Keine rollenbezogenen oder individuellen Besitzrechte innerhalb der Kiste.
+- `/g <Nachricht>`: aktuelle Online-Mitglieder einschließlich Sender erhalten `[G] [TAG] Name: Nachricht`, mit Gruppenfarbe. Keine öffentliche Zustellung, Offline-Zustellung, Speicherung oder Brücke. Maximal 256 Unicode-Codepoints nach Trim; Benutzereingaben bleiben Text. Standardmäßig eine Sekunde Abstand pro Sender. Im Vanish zuerst `/unvanish` verwenden; verborgene Empfänger dürfen Nachrichten empfangen.
+- Beide Commands brauchen `illuniumcustom.use` und Gruppenmitgliedschaft. Konsole wird abgewiesen. Feature-Schalter: `groups.gec.enabled`, `groups.chat.enabled`; beim Abschalten bleiben Daten erhalten.
+
 
 ## Marriage (`marriage`)
 
@@ -177,3 +186,5 @@ Nur **Vanilla-OP oder Serverkonsole**; das Permission-Flag `illuniumcustom.admin
 Profilfehler und Teilfehler werden angezeigt; `PARTIAL` ist kein Gesamterfolg. Nach einem DB-Fehler während Launch bleibt der Batch gesperrt: sauber neu starten, Recovery abwarten, `status`, `staged`, dann ausdrücklich `retry`. Recovery bestätigt nur bereits native Erfolge, sie erteilt beim Start keine neuen Zugangsrechte. Wiederholter Launch ist idempotent. Nach erfolgreicher Anwendung bleibt `/whitelist remove <Name>` wirksam; ein APPLIED-Datensatz stellt die Freigabe nicht wieder her. Geschützte Staff-Accounts bleiben von der bisherigen Guard-Policy erfasst.
 
 Vanilla `/whitelist add <Name>` schaltet dagegen **sofort** frei. Ablauf für den Projektstart und Backups: [`operations.md`](./operations.md).
+
+Patch v1.4 rendert Kategorien und Zahlen farbig: Gold/Silber/Bronze für Rang 1–3, dezentes Grau für spätere Ränge, Weiß für Namen und Hellgrün für Werte. `[Zurück]`/`[Weiter]` sind anklickbar. Ränge, Werte, eigene Platzierung, Top 10, Historie, OP-/Vanish-Filter und Cache-Regeln bleiben erhalten.
