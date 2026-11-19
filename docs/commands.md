@@ -10,12 +10,22 @@ Alle Spieler-Commands benötigen `illuniumcustom.use` (Standard: jeder), alle `/
 | `/ic group inspect <group>` | gespeicherten Zustand und Leader-Invariante prüfen |
 | `/ic group setleader <group> <player>` | Leader neu setzen (Ziel muss Mitglied sein; bisheriger Leader wird Mod) |
 | `/ic group disband <group>` | Gruppe auflösen, nur bei leerer, geschlossener und gespeicherter Gruppenkiste |
+| `/ic beacon setowner <player>` | Eigentümer des Beacons direkt unter den eigenen Füßen setzen (Recovery für vor v1.5 platzierte Beacons; nur als Spieler) |
 
 Jede Admin-Änderung wird mit Absender geloggt (`[admin] <name> ...`). Auch aus der Konsole nutzbar.
 
 ## Recipes (`recipes`)
 
-Shapeless-Rezept `1 × Quartz-Block → 4 × Nether Quartz` (Key `illuniumcustom:quartz_from_quartz_block`), im 2×2- und 3×3-Feld, für alle Spieler ohne Permission. Nur der normale `QUARTZ_BLOCK` zählt, nicht Säule, gemeißelter, glatter Block oder Ziegel. Vanilla-Rezepte bleiben unverändert. Weitere Rezepte: `RecipesModule.recipes()` ergänzen.
+Für alle Spieler ohne Permission, Keys im Namespace `illuniumcustom`. Crafting-Rezepte sind **shapeless** (beliebige Anordnung); nur die genannten Materialien zählen, keine Varianten oder Tags. Vanilla-Rezepte bleiben unverändert. Weitere Rezepte: `RecipesModule.recipes()` ergänzen.
+
+| Key | Zutaten | Ergebnis | Feld |
+| --- | --- | --- | --- |
+| `quartz_from_quartz_block` | 1 × Quartz-Block (nicht Säule, gemeißelt, glatt, Ziegel) | 4 × Nether Quartz | 2×2 / 3×3 |
+| `tuff_from_basalt_gravel` | 2 × Basalt + 2 × Kies | 4 × Tuff | 2×2 / 3×3 |
+| `cinnabar_from_sulfur_dye` | 4 × Sulfur-Block + 1 × roter Farbstoff (kein Potent Sulfur) | 4 × Cinnabar-Block | nur 3×3 |
+| `calcite_from_stone_bonemeal` | 2 × Stein + 2 × Knochenmehl (kein Bruchstein/glatter Stein) | 2 × Calcit | 2×2 / 3×3 |
+| `deepslate_from_cobble_basalt` | 2 × Bruchstein + 2 × Basalt | 4 × Bruchtiefenschiefer | 2×2 / 3×3 |
+| `dead_bush_from_fern` | 1 × Farn im **normalen Ofen** | 1 × toter Busch, 0 XP, 200 Ticks | Ofen (nicht Räucherofen/Schmelzofen) |
 
 ## Groups (`groups`)
 
@@ -46,7 +56,7 @@ Admin-Recovery: siehe oben (`/ic group ...`).
 - `/gec`: alle Rollen teilen dieselben **27 Slots**. Ab **vier eingetragenen Mitgliedern**, inklusive Offline-Mitgliedern, überall ohne Warmup/Cooldown/Combat-Tag verfügbar. Die persönliche Vanilla-Enderchest bleibt separat.
 - Sinkt die Gruppe unter vier, darf sie vorhandene Items weiter entnehmen. Eine leere Kiste bleibt gesperrt. Einlagen, Shift-Klick aus dem Spielerinventar, Drag in die Kiste, Hotbar-/Offhand-Swap, Double-Click, Creative- und Bundle-Aktionen sind dann gesperrt. Entnehmen per normalem Klick oder Shift-Klick aus der Kiste und Ablegen im Spielerinventar ist möglich. Bei vier Mitgliedern gelten wieder volle Rechte.
 - Kick/Leave beendet den Zugriff des entfernten Mitglieds sofort. Zum Auflösen zuerst vollständig leeren, alle Ansichten schließen und die DB-Bestätigung abwarten; danach `/group disband` und `/group confirm` erneut ausführen. Das gilt auch für Admins. Keine rollenbezogenen oder individuellen Besitzrechte innerhalb der Kiste.
-- `/g <Nachricht>`: aktuelle Online-Mitglieder einschließlich Sender erhalten `[G] [TAG] Name: Nachricht`, mit Gruppenfarbe. Keine öffentliche Zustellung, Offline-Zustellung, Speicherung oder Brücke. Maximal 256 Unicode-Codepoints nach Trim; Benutzereingaben bleiben Text. Standardmäßig eine Sekunde Abstand pro Sender. Im Vanish zuerst `/unvanish` verwenden; verborgene Empfänger dürfen Nachrichten empfangen.
+- `/g <Nachricht>`: aktuelle Online-Mitglieder einschließlich Sender erhalten `[G] [TAG] Name: Nachricht`, mit Gruppenfarbe. Emote-Aliase werden wie im öffentlichen Chat ersetzt (Patch v1.5, `emotes.enabled-in-group-chat`); Tab schlägt für ein Wort mit `:` passende Aliase vor, nie Spielernamen. Keine öffentliche Zustellung, Offline-Zustellung, Speicherung oder Brücke. Maximal 256 Unicode-Codepoints nach Trim; Benutzereingaben bleiben Text. Standardmäßig eine Sekunde Abstand pro Sender. Im Vanish zuerst `/unvanish` verwenden; verborgene Empfänger dürfen Nachrichten empfangen.
 - Beide Commands brauchen `illuniumcustom.use` und Gruppenmitgliedschaft. Konsole wird abgewiesen. Feature-Schalter: `groups.gec.enabled`, `groups.chat.enabled`; beim Abschalten bleiben Daten erhalten.
 
 
@@ -70,7 +80,21 @@ Höchstens eine Ehe pro UUID, keine Selbstheirat; Ehen überstehen Quit, Namensw
 | `/playtime` | Eigene Spielzeit |
 | `/playtime <player>` | Spielzeit eines bekannten Spielers, auch offline (letzter bekannter Name; Konsole nur mit Name) |
 
-Gezählt wird ab der ersten Aktivierung des Plugins, sekundengenau, Ausgabe als `1d 2h 3m`; die laufende Session ist sofort enthalten. Gespeichert wird beim Quit, alle 60 Sekunden und beim geordneten Shutdown. Bei einem Absturz fehlt höchstens die Zeit seit dem letzten Checkpoint (≤ 60 s pro Spieler); doppelt gezählt wird nichts. Kein Leaderboard, keine AFK-Erkennung.
+Gezählt wird ab der ersten Aktivierung des Plugins, sekundengenau, Ausgabe als `1d 2h 3m`; die laufende Session ist sofort enthalten. Gespeichert wird beim Quit, alle 60 Sekunden und beim geordneten Shutdown. Bei einem Absturz fehlt höchstens die Zeit seit dem letzten Checkpoint (≤ 60 s pro Spieler); doppelt gezählt wird nichts. Keine AFK-Erkennung.
+
+### Spielzeit-Namensfarben (`playtimecolors`, Patch v1.5)
+
+Der **Spielername** über dem Kopf und in der Tablist färbt sich nach der kumulierten `/playtime`-Zeit (kein Import alter Vanilla-Zeit, kein Saison-Reset). Schwellen sind inklusive: mit genau 150:00 h gilt Stufe 5.
+
+| Stufe | ab | Farbe | | Stufe | ab | Farbe |
+| ---: | ---: | --- | --- | ---: | ---: | --- |
+| 1 | 0 h | `GRAY` | | 6 | 300 h | `BLUE` |
+| 2 | 10 h | `WHITE` | | 7 | 500 h | `LIGHT_PURPLE` |
+| 3 | 30 h | `GREEN` | | 8 | 800 h | `RED` |
+| 4 | 75 h | `DARK_AQUA` | | 9 | 1.200 h | `GOLD` |
+| 5 | 150 h | `AQUA` | | 10 | 2.000 h | `YELLOW` |
+
+Gruppen-Tag (auch Hex) und Marriage-Herz behalten ihre Farben; ohne Gruppe/Ehe wird nur der Name gefärbt. Die Stufe wird nicht gespeichert, sondern aus dem Zeitkonto berechnet: höchstens einmal pro Minute ein Bulk-Snapshot (gespeicherte Zeit aller Spieler + laufende Sessions), beim Join sofort aus dem letzten Snapshot. Verborgene (vanished) Spieler erhalten keine Farbe und damit kein Team, das sie verraten könnte; nach `/unvanish` erscheint die Farbe. OPs werden normal gefärbt, bleiben aber aus Leaderboards ausgeschlossen. Ohne `playtime` bleibt das Modul mit Warnung aus. Der Chat-Absendername wird bewusst nicht gefärbt.
 
 ## Whitelist Guard (`whitelistguard`)
 
@@ -145,6 +169,7 @@ execute in minecraft:the_end run difficulty hard
 
 - Über dem Kopf: `[TAG] Name` (Tag in Gruppenfarbe, auch Hex), Tablist: `[TAG] Name ❤`.
 - Herz nur in der Tablist, für alle Zuschauer: rotes `❤` wenn der Partner online und nicht verborgen ist, sonst graues `💔` (`marriage.offline-symbol`).
+- Spielername in der Spielzeit-Farbe (Patch v1.5), über dem Kopf per Team-Farbe, in der Tablist im Listennamen.
 - Kompatibilität mit anderen Plugins, die Scoreboard-Teams oder Tablist-Namen setzen, ist kein MVP-Ziel (Details: [`architecture.md`](./architecture.md)).
 
 ## Survival-Leaderboards (`leaderboard`, Patch v1.3)
@@ -188,3 +213,32 @@ Profilfehler und Teilfehler werden angezeigt; `PARTIAL` ist kein Gesamterfolg. N
 Vanilla `/whitelist add <Name>` schaltet dagegen **sofort** frei. Ablauf für den Projektstart und Backups: [`operations.md`](./operations.md).
 
 Patch v1.4 rendert Kategorien und Zahlen farbig: Gold/Silber/Bronze für Rang 1–3, dezentes Grau für spätere Ränge, Weiß für Namen und Hellgrün für Werte. `[Zurück]`/`[Weiter]` sind anklickbar. Ränge, Werte, eigene Platzierung, Top 10, Historie, OP-/Vanish-Filter und Cache-Regeln bleiben erhalten.
+
+## Chat-Emotes (`emotes`, Patch v1.5)
+
+Im öffentlichen Chat und in `/g` werden **vollständige** Aliase wie `:skull:` vor der Anzeige durch ein Zeichen ersetzt, case-insensitiv (`:SKULL:` auch). `:skull`, `skull:` und `:skullish:` bleiben Text, unbekannte `:codes:` bleiben exakt erhalten, mehrere Emotes pro Nachricht sind möglich. Ein Durchlauf von links nach rechts, die Ausgabe wird nicht erneut ersetzt. Eingaben werden nie als MiniMessage, Farbcodes oder JSON interpretiert; Commands werden nicht verändert.
+
+| Alias | Zeichen | Alias | Zeichen |
+| --- | --- | --- | --- |
+| `:skull:` | 💀 | `:star:` | ★ |
+| `:heart:` | ❤ | `:check:` | ✔ |
+| `:broken_heart:` | 💔 | `:cross:` | ✖ |
+| `:smile:` | ☺ | `:sun:` | ☀ |
+| `:sad:` | ☹ | `:music:` | ♫ |
+
+- **Tab:** Paper-Chat-Completions werden pro Spieler hinzugefügt (`:sk` + Tab → `:skull:`) und beim Disable genau diese wieder entfernt. In `/g` liefert der Command selbst die Vorschläge.
+- **Signierter Chat:** Der signierte Originaltext bleibt unverändert und meldbar. Nur Nachrichten, die wirklich einen bekannten Alias enthalten, bekommen neuen Anzeigeinhalt; der Vanilla-Client kennzeichnet genau diese als vom Server verändert. Nachrichten ohne Alias bleiben unberührt.
+- Emoji wie 💀/💔 zeichnet der Vanilla-Font ggf. einfarbig; wird ein Kästchen angezeigt, in `emotes.aliases` einen Fallback (z. B. `skull: "☠"`) setzen.
+
+## Beacons (`beacons`, Patch v1.5)
+
+| Command | Effekt |
+| --- | --- |
+| `/beacon info` | Für den Beacon **direkt unter den Füßen** (gleiche X/Z, Y−1; kein Radius, kein Blickziel): Eigentümer, Pyramidenstufe, Himmel frei/überdacht, gewählte Effekte und tatsächliche Wirkung |
+| `/ic beacon setowner <player>` | Admin-Recovery, ebenfalls nur auf dem Beacon stehend; als `[admin] ...` geloggt |
+
+- **Unter Dach:** Ein Beacon mit vollständiger Pyramide (Stufe 1–4) gibt seine im Vanilla-Menü gewählten und bezahlten Effekte auch unter einer undurchsichtigen Decke; der Strahl bleibt vom Dach verdeckt. Reichweite (`Stufe × 10 + 10`), Dauer, Intervall (80 Ticks) und Stufe-II-Regel wie Vanilla: Primäreffekt II nur bei Stufe 4 mit gleichem Sekundäreffekt, sonst bei Stufe 4 zusätzlich der Sekundäreffekt (z. B. Regeneration) auf Stufe I. Ohne Pyramide oder ohne Auswahl keine Effekte. Stärkere oder längere vorhandene Effekte bleiben erhalten; mehrere Beacons verstärken sich nicht.
+- **Menü unter Dach:** Vanilla aktualisiert die gespeicherte Stufe eines verdeckten Beacons nicht und würde die Auswahl ablehnen. Beim Öffnen meldet das Plugin dem Menü die echte Pyramidenstufe; Bezahlung und Prüfung bleiben Vanilla.
+- Bei freiem Himmel versorgt Vanilla den Beacon selbst. Nur geladene, tickende Chunks; Pyramidenblöcke in ungeladenen Chunks zählen nicht. Keine Sounds, Partikel oder Broadcasts durch das Plugin.
+- **Eigentümer:** Wer einen Beacon platziert, wird per UUID im Beacon selbst gespeichert (Namenswechsel unkritisch). Abbauen löscht ihn; ein Item überträgt keinen alten Eigentümer. Vor v1.5 gesetzte Beacons haben keinen Eigentümer; OP-Rechte oder Gruppenrollen geben keinen Zugriff.
+- **Kein `/beacon beam`:** Einen einzelnen Strahl bei freiem Himmel auszublenden, ist mit Vanilla-Clients nicht möglich (Patch v1.5 B1 blockiert, Begründung in [`development.md`](./development.md)). Das Plugin bietet deshalb keinen Strahl-Command an.

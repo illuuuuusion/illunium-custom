@@ -14,6 +14,9 @@ modules:                      # <modul>: true|false; fehlende Module sind aktiv
   vanish: true
   spawn: true
   leaderboard: true
+  emotes: true
+  playtimecolors: true
+  beacons: true
 
 storage:
   filename: data.db           # SQLite-Datei im Pluginordner, nur einfacher Dateiname
@@ -43,6 +46,25 @@ vanish:
 
 leaderboard:
   cache-seconds: 60           # 30..3600 Sekunden nach abgeschlossenem Snapshot
+
+emotes:
+  enabled-in-public-chat: true
+  enabled-in-group-chat: true
+  tab-completion: true
+  aliases:                    # alias: Zeichen; fehlt der Abschnitt, gelten die zehn Standard-Aliase
+    skull: "💀"
+    heart: "❤"
+
+playtimecolors:
+  tiers:                      # genau 10 Einträge, fehlt der Abschnitt, gilt die Standardtabelle
+    - {hours: 0, color: GRAY}
+    - {hours: 10, color: WHITE}
+    # ... bis {hours: 2000, color: YELLOW}
+
+beacons:
+  allow-covered-effects: true
+  beam-toggle-enabled: false  # muss false sein (B1 blockiert)
+  effect-refresh-ticks: 80    # 20..200
 ```
 
 | Schlüssel | Standard | Regel |
@@ -54,6 +76,12 @@ leaderboard:
 | `storage.filename` | `data.db` | `^[A-Za-z0-9_-][A-Za-z0-9._-]*$`, liegt immer im Pluginordner |
 | `marriage.offline-symbol` | `💔` | nicht leer; falls der Vanilla-Font `💔` nicht darstellt, `"✕❤"` setzen |
 | `whitelistguard.check-interval-seconds` | `30` | 5–3600; Prüfung ohne Netzwerkzugriff |
+| `emotes.enabled-in-public-chat` · `enabled-in-group-chat` · `tab-completion` | `true` | nur Boolean |
+| `emotes.aliases` | zehn Standard-Aliase | Abschnitt `alias: "Zeichen"`; Alias 1–32 Zeichen `a-z 0-9 _ + -` (case-insensitiv, keine Duplikate), Zeichen 1–8 sichtbare Codepoints ohne `:`, `§`, Steuer- oder Bidi-Zeichen (ZWJ für Emoji-Folgen erlaubt); höchstens 64 Aliase |
+| `playtimecolors.tiers` | Tabelle aus `commands.md` | Liste mit **genau 10** `{hours, color}`; `hours` Ganzzahl ≥ 0, erster Eintrag 0, streng aufsteigend; `color` einer der 16 Minecraft-Farbnamen (case-insensitiv, kein Hex: Team-Namensfarben kennen nur diese) |
+| `beacons.allow-covered-effects` | `true` | nur Boolean; `false` = nur Vanilla-Verhalten, Eigentümer und `/beacon info` bleiben |
+| `beacons.beam-toggle-enabled` | `false` | nur `false`; `true` bricht den Start ab, weil die Strahlsteuerung technisch nicht umsetzbar ist |
+| `beacons.effect-refresh-ticks` | `80` | Ganzzahl 20–200 (kürzeste Vanilla-Wirkung dauert 220 Ticks) |
 | `whitelistguard.staff` | `[]` | Liste von `{uuid, name}`. `uuid` mit Bindestrichen, Version 4 (Mojang-Account, keine Offline-UUID), keine Duplikate; `name` 1–16 Zeichen `A-Z a-z 0-9 _`. |
 
 `spawn` hat keine eigenen Schlüssel: Warmup 10 s, Cooldown 60 min und Combat-Tag 30 s sind feste Produktwerte aus Patch v1.2; Cooldowns liegen pro UUID in `data.db`, nicht in der Config.
@@ -86,3 +114,7 @@ Die UUIDs im Beispiel sind Platzhalter. Für einen sichtbaren Survival-Admin die
 Alle neuen Werte sind optional; fehlende Abschnitte verwenden die obigen Defaults. `groups.gec.enabled` und `groups.chat.enabled` akzeptieren ausschließlich Booleans und registrieren bei `false` den jeweiligen Command/Listener nicht. `modules.groups: false` deaktiviert auch beide Features. Gespeicherte Kisten bleiben erhalten; gefüllte Kisten verhindern auch bei deaktiviertem Kistenfeature eine Gruppenauflösung. Zum Leeren das Feature wieder aktivieren.
 
 `min-members` muss genau **4**, `slots` genau **27** sein; andere Werte werden beim Start abgewiesen. Chatlänge 1–256 und Cooldown 0–10 sind Ganzzahlen, Zahlen als Strings werden nicht akzeptiert. Ein ungültiger Wert bricht den Pluginstart ab. Das feste Leaderboard-Farbschema hat keine zusätzliche Einstellung; `leaderboard.cache-seconds` bleibt unverändert.
+
+## Patch v1.5
+
+Alle neuen Abschnitte sind optional; eine v1.4-Config ohne sie startet mit den Defaults (geprüft). Ungültige Aliase, Farben, Schwellen, Booleans als Strings oder `beacons.beam-toggle-enabled: true` brechen den Pluginstart mit präziser Meldung ab. `modules.playtimecolors: true` bei `modules.playtime: false` startet mit Warnung ohne Namensfarben (kein Fallback auf Vanilla-Spielzeit). Für Rückkehr zu v1.4 die alte `config.yml` verwenden: v1.4 lehnt die neuen `modules`-Schlüssel als unbekannt ab.

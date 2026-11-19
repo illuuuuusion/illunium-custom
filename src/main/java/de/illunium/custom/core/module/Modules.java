@@ -1,9 +1,12 @@
 package de.illunium.custom.core.module;
 
+import de.illunium.custom.beacons.BeaconModule;
+import de.illunium.custom.emotes.EmotesModule;
 import de.illunium.custom.groups.GroupsModule;
 import de.illunium.custom.leaderboard.LeaderboardModule;
 import de.illunium.custom.marriage.MarriageModule;
 import de.illunium.custom.playtime.PlaytimeModule;
+import de.illunium.custom.playtimecolors.PlaytimeColorsModule;
 import de.illunium.custom.recipes.RecipesModule;
 import de.illunium.custom.sit.SitModule;
 import de.illunium.custom.spawn.SpawnModule;
@@ -20,9 +23,11 @@ public final class Modules {
 
     public static List<FeatureModule> create() {
         PlaytimeModule playtime = new PlaytimeModule();
+        EmotesModule emotes = new EmotesModule();
         return List.of(
                 new RecipesModule(),
-                new GroupsModule(),
+                emotes,
+                new GroupsModule(emotes),
                 new MarriageModule(),
                 playtime,
                 new WhitelistGuardModule(),
@@ -30,7 +35,9 @@ public final class Modules {
                 new SitModule(),
                 new VanishModule(),
                 new SpawnModule(),
-                new LeaderboardModule(playtime)
+                new LeaderboardModule(playtime),
+                new PlaytimeColorsModule(playtime),
+                new BeaconModule()
         );
     }
 }

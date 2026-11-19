@@ -108,3 +108,25 @@ Bei `Gruppenkiste gesperrt` oder Speicherfehler: betroffene Gruppe nicht auflös
 Kisten-Snapshots folgen einer erlaubten Änderung im nächsten Tick; bei geordnetem Stop wird final geschrieben und die DB-Queue abgearbeitet. Vanilla-Spielerinventar und Plugin-SQLite bilden **keine gemeinsame Transaktion**. Harte Host-/Prozessabstürze können letzte Transfers verlieren oder duplizieren; bei Recovery müssen beide Bestände gemeinsam geprüft werden. Der Prüfplugin injiziert begrenzt SQL-Schreibfehler und beschädigte Payloads; ein echter Prozessabsturz während Client-Transfers bleibt Teil der manuellen Abnahme.
 
 **Offen vor Produktionsfreigabe: mindestens vier echte Vanilla-Clients.** Die Checklisten in `Patch_v1.4_Implementation_Plan.md` vollständig abnehmen: gemeinsames Live-Inventar und Rollen, alle Klick-/Shift-/Drag-/Hotbar-/Offhand-/Double-Click-/Creative-/Bundle-Wege beim Wechsel 4 → 3 → 4, Kick/Leave bei offenem GUI, Disconnect während Laden/Speichern, parallele Entnahmen, Neustart und kontrollierter Crash/Restore, Sonderitems/Data Components, privater Gruppenchat mit Vanish und visuelle Leaderboards. Außerdem bisherige Whitelist-, Spawn-, Sit-, Marriage- und Gruppenrechte-Flows wiederholen. Automatisierte Prüfungen und synthetische Zuschauer erfüllen dieses Gate nicht. Kein Produktionsrollout oder Serverneustart der Forever-World durch diesen Patch.
+
+## Patch v1.5: Rollout und Abnahme
+
+Keine Schemaänderung (v5 bleibt), keine neuen Abhängigkeiten. Neue Daten liegen nur in der Welt: Beacon-Eigentümer und Effektwahl-Snapshot im PDC des jeweiligen Beacons (`PublicBukkitValues`, `illuniumcustom:beacon_owner`/`beacon_selection`). Vor dem Update trotzdem DB **und** Welten sichern. Rollback auf v1.4: alte JAR **und** alte `config.yml` (v1.4 lehnt `modules.emotes|playtimecolors|beacons` als unbekannt ab); DB und Welt bleiben nutzbar, Beacon-PDC-Einträge stören v1.4 nicht. Ohne `/beacon beam` gibt es nichts zurückzustellen.
+
+Alte Beacons haben keinen Eigentümer. Zuordnung nur nach Prüfung per `/ic beacon setowner <spieler>` auf dem Beacon stehend; das Log enthält Admin, Position, alten und neuen Eigentümer.
+
+### Patch v1.5: Abnahme vor Produktionsfreigabe
+
+Mit mindestens zwei Vanilla-26.3-Clients (A, B; zusätzlich ein OP), keinem anderen Plugin, isolierter Welt. Ergebnis mit Datum, Build und JAR-Hash in [`development.md`](./development.md) festhalten.
+
+- [ ] Beacon: A platziert → `/beacon info` zeigt A, auch nach Namenswechsel/Offline; B und OP sind nicht Eigentümer; daneben stehen → abgelehnt; alter Beacon → „keiner“, Recovery nur per `/ic beacon setowner` mit Logzeile.
+- [ ] Beacon unter Stein-Dach von Anfang an: Menü bietet Effekte der echten Stufe an, Bezahlung speichert; Effekte bei B innerhalb `Stufe × 10 + 10`, nicht außerhalb; Stufe 1–3 ohne II, Stufe 4 mit gleichem Sekundär → II, mit Regeneration → Primär I + Regeneration I. Kein sichtbarer Strahl.
+- [ ] Pyramide abbauen, Beacon abbauen, Explosion → Effekte laufen nur aus. Mehrere Beacons → keine Verstärkung. Neustart → verdeckter Stufe-4-Beacon gibt dieselbe Wirkung (inkl. II/Regeneration).
+- [ ] Freier Himmel: Vanilla-Verhalten unverändert (Strahl, Sound, Effekte), keine Doppel-/Stärkerwirkung.
+- [ ] Emotes: `GG :skull:` → `GG 💀` bei beiden Clients oder Fallback konfigurieren; mehrere/unbekannte Aliase, URL, Groß-/Kleinschreibung; `:sk` + Tab im Chat und in `/g`; Nachricht ohne Alias ohne „modified“-Kennzeichen, mit Alias gekennzeichnet; Meldefunktion zeigt den Originaltext; `/g` bleibt privat.
+- [ ] Namensfarben: neue Accounts grau; per gespeicherter Spielzeit (Test-DB) 10/30/…/2.000 h sofort beim Join korrekt; Stufenwechsel innerhalb einer Minute; Gruppen-Hex-Tag und Herz unverändert, ohne doppelten Tag; ohne Gruppe/Ehe; Vanish/Unvanish ohne Tablist-Eintrag oder Join-Text; Weltwechsel und Neustart.
+- [ ] Rezepte im 2×2-Spielerinventar (Tuff, Calcit, Bruchtiefenschiefer, Quartz) und an der Werkbank (Cinnabar nur 3×3); Farn nur im Ofen.
+- [ ] Regression: `/gec` 4er-Schwelle, `/g`, Leaderboards, Whitelist-Staging, Vanish-Opt-out, `/sit`, `/spawn`-Cooldown, Marriage, Quartz.
+- [ ] Lastprofil (spark) mit vielen Spielern und Beacons auf der Zielhardware.
+
+Offene Produktentscheidung zu B1 (Strahl bei freiem Himmel ausblenden): technisch ohne Client-Mod/Resourcepack nicht umsetzbar, siehe [`development.md`](./development.md#gate-1--beacon-machbarkeit). Kein Produktionsrollout durch diesen Patch.

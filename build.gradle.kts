@@ -63,19 +63,21 @@ tasks.jar {
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
 }
 
-// Opt-in test plugin, for a disposable Paper server only; never included in release artifacts.
-tasks.register<Jar>("paperProbeJar") {
+// Opt-in test plugins, for a disposable Paper server only; never included in release artifacts.
+fun registerPaperProbe(taskName: String, pluginName: String, mainClass: String) = tasks.register<Jar>(taskName) {
     dependsOn(tasks.jar, tasks.testClasses)
-    archiveFileName = "IlluniumGroupChestProbe.jar"
+    archiveFileName = "$pluginName.jar"
     destinationDirectory = layout.buildDirectory.dir("paper-probe")
     from(tasks.jar.map { zipTree(it.archiveFile) }) { exclude("plugin.yml") }
-    from(sourceSets.test.get().output) { include("**/GroupChestPaperProbe*.class") }
-    val descriptor = layout.buildDirectory.file("paper-probe-plugin/plugin.yml")
+    from(sourceSets.test.get().output) { include("${mainClass.replace('.', '/')}*.class") }
+    val descriptor = layout.buildDirectory.file("paper-probe-plugin/$taskName/plugin.yml")
     doFirst {
         descriptor.get().asFile.apply {
             parentFile.mkdirs()
-            writeText("name: IlluniumGroupChestProbe\nversion: test\nmain: de.illunium.custom.groups.GroupChestPaperProbe\napi-version: '26.3'\n")
+            writeText("name: $pluginName\nversion: test\nmain: $mainClass\napi-version: '26.3'\n")
         }
     }
     from(descriptor)
 }
+registerPaperProbe("paperProbeJar", "IlluniumGroupChestProbe", "de.illunium.custom.groups.GroupChestPaperProbe")
+registerPaperProbe("v15ProbeJar", "IlluniumV15Probe", "de.illunium.custom.beacons.V15PaperProbe")

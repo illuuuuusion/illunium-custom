@@ -3,9 +3,12 @@ package de.illunium.custom.groups;
 import de.illunium.custom.core.VisibilityService;
 import de.illunium.custom.core.command.Chat;
 import de.illunium.custom.core.command.UserException;
+import de.illunium.custom.emotes.EmoteFormatter;
 import io.papermc.paper.command.brigadier.BasicCommand;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
+import java.util.Collection;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.function.LongSupplier;
@@ -23,10 +26,11 @@ final class GroupChatCommand implements BasicCommand, Listener {
     private final VisibilityService visibility;
     private final GroupSettings settings;
     private final LongSupplier nanoTime;
+    private final EmoteFormatter emotes;
     private final Map<UUID, Long> sentAt = new HashMap<>();
 
-    GroupChatCommand(GroupService groups, Server server, VisibilityService visibility, GroupSettings settings, LongSupplier nanoTime) {
-        this.groups = groups; this.server = server; this.visibility = visibility; this.settings = settings; this.nanoTime = nanoTime;
+    GroupChatCommand(GroupService groups, Server server, VisibilityService visibility, GroupSettings settings, LongSupplier nanoTime, EmoteFormatter emotes) {
+        this.groups = groups; this.server = server; this.visibility = visibility; this.settings = settings; this.nanoTime = nanoTime; this.emotes = emotes;
     }
 
     @Override public void execute(CommandSourceStack source, String[] args) {
@@ -46,13 +50,18 @@ final class GroupChatCommand implements BasicCommand, Listener {
                 throw new UserException("Bitte warte kurz vor der nächsten Gruppennachricht.");
             Component message = Component.text("[G] ", NamedTextColor.LIGHT_PURPLE).append(group.prefix())
                     .append(Component.text(player.getName() + ": ", NamedTextColor.WHITE))
-                    .append(Component.text(text, NamedTextColor.GRAY));
+                    .append(Component.text(emotes.format(text), NamedTextColor.GRAY));
             for (UUID member : group.members().keySet()) {
                 Player recipient = server.getPlayer(member);
                 if (recipient != null) recipient.sendMessage(message);
             }
             if (settings.cooldownSeconds() > 0) sentAt.put(player.getUniqueId(), now);
         } catch (UserException e) { sender.sendMessage(Chat.error(e.getMessage())); }
+    }
+
+    /** Emote aliases for a word starting with ':'; nothing else (no member names, nothing about presence). */
+    @Override public Collection<String> suggest(CommandSourceStack source, String[] args) {
+        return args.length > 0 && args[args.length - 1].startsWith(":") ? Chat.complete(args, emotes.completions().stream()) : List.of();
     }
 
     @EventHandler public void quit(PlayerQuitEvent event) { sentAt.remove(event.getPlayer().getUniqueId()); }

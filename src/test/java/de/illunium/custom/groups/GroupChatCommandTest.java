@@ -38,7 +38,7 @@ class GroupChatCommandTest {
             main.await(groups.recolor(a.getUniqueId(), "#123456"));
             Server server = server(); var visibility = new VisibilityService(server);
             visibility.setHidden(b.getUniqueId(), true);
-            var command = new GroupChatCommand(groups, server, visibility, new GroupSettings(true, true, 256, 0), () -> 0);
+            var command = new GroupChatCommand(groups, server, visibility, new GroupSettings(true, true, 256, 0), () -> 0, de.illunium.custom.emotes.EmoteFormatter.NONE);
             command.execute(source(a), new String[]{"<red>Hallo", "", "§c&b"});
             assertEquals(1, messages(a).size()); assertEquals(messages(a), messages(b));
             assertTrue(messages(outsider).isEmpty()); assertTrue(messages(offline).isEmpty());
@@ -62,7 +62,7 @@ class GroupChatCommandTest {
             Player a = player("Alex"), b = player("Bob"), outsider = player("Other");
             main.await(groups.create(a.getUniqueId(), "Nova", "NOVA")); join(groups, a, b);
             Server server = server(); var visibility = new VisibilityService(server); var now = new AtomicLong();
-            var command = new GroupChatCommand(groups, server, visibility, new GroupSettings(true, true, 256, 1), now::get);
+            var command = new GroupChatCommand(groups, server, visibility, new GroupSettings(true, true, 256, 1), now::get, de.illunium.custom.emotes.EmoteFormatter.NONE);
             command.execute(source(outsider), new String[]{"No group"});
             assertTrue(plain(messages(outsider).getLast()).contains("keiner Gruppe"));
             List<Component> consoleMessages = new ArrayList<>();
@@ -81,6 +81,28 @@ class GroupChatCommandTest {
             command.execute(source(a), new String[]{"too soon"}); assertTrue(plain(messages(a).getLast()).contains("warte"));
             command.execute(source(b), new String[]{"own cooldown"}); assertEquals(2, messages(b).size());
             now.set(1_000_000_000L); command.execute(source(a), new String[]{"exactly one second"}); assertEquals(3, messages(b).size());
+        }
+    }
+
+    @Test void emotesAreFormattedForMembersOnlyAndSuggestedForColonWords() throws Exception {
+        try (var db = Database.open(dir.resolve("data.db"))) {
+            var groups = GroupService.load(db, main, main.clock(), (p,g) -> {});
+            Player a = player("Alex"), b = player("Bob"), outsider = player("Other");
+            main.await(groups.create(a.getUniqueId(), "Nova", "NOVA")); join(groups, a, b);
+            Server server = server();
+            var emotes = de.illunium.custom.emotes.EmoteFormatterAccess.defaults();
+            var command = new GroupChatCommand(groups, server, new VisibilityService(server), new GroupSettings(true, true, 256, 0), () -> 0, emotes);
+            command.execute(source(a), new String[]{"GG", ":SKULL:", ":nope:", ":skull"});
+            assertEquals("[G] [NOVA] Alex: GG 💀 :nope: :skull", plain(messages(b).getFirst()));
+            assertTrue(messages(outsider).isEmpty());
+            assertEquals(java.util.List.of(":sad:", ":skull:", ":smile:", ":star:", ":sun:"), command.suggest(source(a), new String[]{"hi", ":s"}));
+            assertEquals(java.util.List.of(":skull:"), command.suggest(source(a), new String[]{":SK"}), "case-insensitive prefix");
+            assertEquals(java.util.List.of(), command.suggest(source(a), new String[]{"Bo"}), "no member or presence hints");
+            assertEquals(java.util.List.of(), command.suggest(source(a), new String[0]));
+            var plainCommand = new GroupChatCommand(groups, server, new VisibilityService(server), new GroupSettings(true, true, 256, 0), () -> 0,
+                    de.illunium.custom.emotes.EmoteFormatter.NONE);
+            plainCommand.execute(source(a), new String[]{":skull:"});
+            assertEquals("[G] [NOVA] Alex: :skull:", plain(messages(b).getLast()), "emotes off for /g");
         }
     }
 
