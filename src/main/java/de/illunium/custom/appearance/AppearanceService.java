@@ -8,6 +8,7 @@ import java.util.Set;
 import java.util.UUID;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.TextComponent;
+import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Server;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -20,8 +21,8 @@ import org.bukkit.scoreboard.Team;
 
 /**
  * Sole owner of this plugin's nametag and tablist changes; modules only report data. Per online player there is a
- * prefix (nametag and tablist) and a suffix (tablist only). Uses the main scoreboard, so every viewer sees the same,
- * with one team per decorated player. Teams named {@value #TEAM_PREFIX}* belong to this plugin and nothing else.
+ * prefix (nametag and tablist), a name colour (nametag and tablist) and a suffix (tablist only). Uses the main
+ * scoreboard, so every viewer sees the same, with one team per decorated player. Teams named {@value #TEAM_PREFIX}* belong to this plugin and nothing else.
  * Main thread only. Each change re-renders just that one player.
  */
 public final class AppearanceService implements Listener {
@@ -32,8 +33,9 @@ public final class AppearanceService implements Listener {
     private final Scoreboard board;
     private final Map<UUID, Component> prefixes = new HashMap<>();
     private final Map<UUID, Component> suffixes = new HashMap<>();
+    private final Map<UUID, NamedTextColor> nameColors = new HashMap<>();
 
-    private AppearanceService(Server server) {
+    AppearanceService(Server server) {
         this.server = server;
         this.board = server.getScoreboardManager().getMainScoreboard();
     }
@@ -60,12 +62,21 @@ public final class AppearanceService implements Listener {
         }
     }
 
+    /** Colour of the bare player name above the head and in the tablist; null keeps the vanilla colour. */
+    public void setNameColor(UUID player, NamedTextColor color) {
+        if (put(nameColors, player, color)) {
+            render(player);
+        }
+    }
+
     /** Resets every player list name we set and removes our teams. */
     public void close() {
         Set<UUID> decorated = new HashSet<>(prefixes.keySet());
         decorated.addAll(suffixes.keySet());
+        decorated.addAll(nameColors.keySet());
         prefixes.clear();
         suffixes.clear();
+        nameColors.clear();
         for (UUID uuid : decorated) {
             Player player = server.getPlayer(uuid);
             if (player != null) {
@@ -80,6 +91,7 @@ public final class AppearanceService implements Listener {
         UUID uuid = event.getPlayer().getUniqueId();
         prefixes.remove(uuid);
         suffixes.remove(uuid);
+        nameColors.remove(uuid);
         Team team = board.getTeam(teamName(uuid));
         if (team != null) {
             team.unregister();
@@ -87,11 +99,11 @@ public final class AppearanceService implements Listener {
     }
 
     /** Modules report again on join, so nothing is kept for offline players. Returns whether anything changed. */
-    private boolean put(Map<UUID, Component> map, UUID player, Component value) {
+    private <T> boolean put(Map<UUID, T> map, UUID player, T value) {
         if (server.getPlayer(player) == null) {
             return false;
         }
-        Component old = value == null ? map.remove(player) : map.put(player, value);
+        T old = value == null ? map.remove(player) : map.put(player, value);
         return !Objects.equals(old, value);
     }
 
@@ -99,9 +111,11 @@ public final class AppearanceService implements Listener {
         Player player = Objects.requireNonNull(server.getPlayer(uuid));
         Component prefix = prefixes.get(uuid);
         Component suffix = suffixes.get(uuid);
+        NamedTextColor color = nameColors.get(uuid);
 
+        // The team colours only the name; the prefix component keeps its own (possibly hex) colour.
         Team team = board.getTeam(teamName(uuid));
-        if (prefix == null) {
+        if (prefix == null && color == null) {
             if (team != null) {
                 team.unregister();
             }
@@ -110,20 +124,21 @@ public final class AppearanceService implements Listener {
                 team = board.registerNewTeam(teamName(uuid));
             }
             team.prefix(prefix);
+            team.color(color);
             if (!team.hasEntry(player.getName())) {
                 team.addEntry(player.getName());
             }
         }
 
         // The client shows an explicit list name instead of the team decoration, so the prefix is not doubled.
-        if (prefix == null && suffix == null) {
+        if (prefix == null && suffix == null && color == null) {
             player.playerListName(null);
         } else {
             TextComponent.Builder name = Component.text();
             if (prefix != null) {
                 name.append(prefix);
             }
-            name.append(Component.text(player.getName()));
+            name.append(Component.text(player.getName(), color));
             if (suffix != null) {
                 name.append(suffix);
             }

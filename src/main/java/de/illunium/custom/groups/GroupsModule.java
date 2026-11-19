@@ -2,6 +2,7 @@ package de.illunium.custom.groups;
 
 import de.illunium.custom.core.module.FeatureModule;
 import de.illunium.custom.core.module.ModuleContext;
+import de.illunium.custom.emotes.EmotesModule;
 import java.time.InstantSource;
 import java.util.List;
 import org.bukkit.event.EventHandler;
@@ -12,11 +13,17 @@ import org.bukkit.event.player.PlayerJoinEvent;
 /** Player groups with tag, colour and roles (MVP §3). Invites and confirmations are volatile by design. */
 public final class GroupsModule implements FeatureModule, Listener {
 
+    private final EmotesModule emotes;
     private GroupService groups;
     private ModuleContext context;
     private GroupChestService chests;
     private GroupChestInventoryListener chestListener;
     private GroupChatCommand chat;
+
+    /** {@code emotes} is enabled before this module; its formatter is read once in {@link #enable}. */
+    public GroupsModule(EmotesModule emotes) {
+        this.emotes = emotes;
+    }
 
     @Override
     public String id() {
@@ -40,7 +47,7 @@ public final class GroupsModule implements FeatureModule, Listener {
             context.plugin().registerCommand("gec", "Gemeinsame Gruppenkiste", List.of(), new GroupChestCommand(chests));
         }
         if (settings.chatEnabled()) {
-            chat = new GroupChatCommand(groups, context.plugin().getServer(), context.visibility(), settings, System::nanoTime);
+            chat = new GroupChatCommand(groups, context.plugin().getServer(), context.visibility(), settings, System::nanoTime, emotes.groupChat());
             context.plugin().getServer().getPluginManager().registerEvents(chat, context.plugin());
             context.plugin().registerCommand("g", "Privater Gruppenchat", List.of(), chat);
         }

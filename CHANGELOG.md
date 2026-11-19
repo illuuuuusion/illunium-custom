@@ -1,5 +1,16 @@
 # Changelog
 
+## Unreleased — Patch v1.5
+
+Schema unverändert (**v5**), keine neuen Abhängigkeiten. Plan: [`docs/plans/Patch_v1.5_Implementation_Plan.md`](./docs/plans/Patch_v1.5_Implementation_Plan.md). Die Planungsdokumente liegen jetzt unter `docs/plans/`.
+
+- Beacons (`beacons`): Verdeckte Beacons mit gültiger Pyramide geben die im Vanilla-Menü bezahlte Auswahl mit Vanilla-Stufe, -Reichweite, -Dauer und Stufe-II-Regel; das Menü arbeitet unter Dach mit der echten Stufe. Eigentümer (UUID des Platzierers) im Beacon, `/beacon info`, Admin-Recovery `/ic beacon setowner` mit Audit-Log.
+- **B1 blockiert:** Strahl bei freiem Himmel ausblenden ist mit Vanilla-Clients nicht möglich (Client berechnet den Strahl selbst); kein `/beacon beam`, `beacons.beam-toggle-enabled` nur `false`.
+- Chat-Emotes (`emotes`): zehn konfigurierbare `:alias:` im öffentlichen Chat und in `/g`, case-insensitiv, ohne Rekursion oder Formatinterpretation; Tab-Completion per Paper-Chat-Completions bzw. `/g`-Vorschlägen. Signierte Nachricht bleibt erhalten, nur geänderte Nachrichten bekommen neuen Anzeigeinhalt.
+- Spielzeit-Namensfarben (`playtimecolors`): zehn feste Stufen von 0 h (grau) bis 2.000 h (gelb) aus der bestehenden `/playtime`-Zeit, über dem Kopf und in der Tablist; Gruppen-Tag und Marriage-Herz unverändert, verborgene Spieler ohne Farbe. `AppearanceService` bleibt einziger Renderer (`setNameColor`).
+- Rezepte: Tuff (2 Basalt + 2 Kies → 4), Cinnabar (4 Sulfur + roter Farbstoff → 4), Calcit (2 Stein + 2 Knochenmehl → 2), Bruchtiefenschiefer (2 Bruchstein + 2 Basalt → 4, Menge laut Plan-Annahme) und Ofen Farn → toter Busch (200 Ticks, 0 XP).
+- Zweites Opt-in-Prüfplugin `v15ProbeJar`; Build-Task für Prüfplugins vereinheitlicht. Automatisierte und isolierte Paper-Prüfungen sind dokumentiert; Client-E2E und Produktionsfreigabe offen.
+
 ## Unreleased — Patch v1.4
 
 Schema **v5**, additiv auf v4: `V5__group_chests.sql`. Keine neuen Abhängigkeiten. Plan: `Patch_v1.4_Implementation_Plan.md`.

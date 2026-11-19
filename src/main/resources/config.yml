@@ -12,6 +12,9 @@ modules:
   vanish: true
   spawn: true
   leaderboard: true
+  emotes: true
+  playtimecolors: true
+  beacons: true
 
 storage:
   # SQLite file inside the plugin folder.
@@ -47,3 +50,42 @@ vanish:
 leaderboard:
   # 30..3600 seconds after completing a snapshot. Always 10 rows, all OPs excluded.
   cache-seconds: 60
+
+emotes:
+  enabled-in-public-chat: true
+  enabled-in-group-chat: true
+  tab-completion: true
+  # alias: symbol. Exact ":alias:" tokens, case-insensitive; at most 64 aliases, symbols 1..8 characters.
+  # The vanilla font may draw emoji monochrome; if a glyph shows as a box, use a fallback such as "☠" for skull.
+  aliases:
+    skull: "💀"
+    heart: "❤"
+    broken_heart: "💔"
+    smile: "☺"
+    sad: "☹"
+    star: "★"
+    check: "✔"
+    cross: "✖"
+    sun: "☀"
+    music: "♫"
+
+playtimecolors:
+  # Exactly 10 tiers, hours strictly ascending from 0 (inclusive), color a Minecraft colour name. Needs playtime.
+  tiers:
+    - {hours: 0, color: GRAY}
+    - {hours: 10, color: WHITE}
+    - {hours: 30, color: GREEN}
+    - {hours: 75, color: DARK_AQUA}
+    - {hours: 150, color: AQUA}
+    - {hours: 300, color: BLUE}
+    - {hours: 500, color: LIGHT_PURPLE}
+    - {hours: 800, color: RED}
+    - {hours: 1200, color: GOLD}
+    - {hours: 2000, color: YELLOW}
+
+beacons:
+  # Covered beacons (opaque roof) give the effects selected in the vanilla menu; the beam stays hidden by the roof.
+  allow-covered-effects: true
+  # Must stay false: hiding the beam under a free sky is not possible without client mods (Patch v1.5 B1 blocked).
+  beam-toggle-enabled: false
+  effect-refresh-ticks: 80 # 20..200; vanilla uses 80
